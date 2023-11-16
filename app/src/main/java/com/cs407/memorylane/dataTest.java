@@ -13,7 +13,10 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 public class dataTest extends AppCompatActivity {
 
@@ -47,6 +50,30 @@ public class dataTest extends AppCompatActivity {
                 Log.e("Firestore", "Error getting documents: " + task.getException());
             }
         });
+
+        // Create a map representing the new user data
+        Map<String, Object> newUser = new HashMap<>();
+        newUser.put("Email", "newuser@example.com");
+        newUser.put("Name", "New User");
+        newUser.put("UserID", "67890");
+        newUser.put("Username", "newuser");
+        List<String> friendsList = new ArrayList<>();
+        friendsList.add("friend3@example.com");
+        friendsList.add("friend4@example.com");
+        newUser.put("Friends", friendsList);
+
+        // Add the new document to the "User Data" collection
+        db.collection("User Data").add(newUser)
+                .addOnSuccessListener(documentReference -> {
+                    // Document added with ID: documentReference.getId()
+                    Log.d("Firestore", "Document added with ID: " + documentReference.getId());
+                })
+                .addOnFailureListener(e -> {
+                    // Handle failure
+                    Log.e("Firestore", "Error adding document", e);
+                });
+
+
 
 
     }
