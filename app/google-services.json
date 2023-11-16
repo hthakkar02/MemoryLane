@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "124067845020",
+    "project_id": "memorylane-91b5e",
+    "storage_bucket": "memorylane-91b5e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:124067845020:android:18773c580711e716072e59",
+        "android_client_info": {
+          "package_name": "com.cs407.memorylane"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA20DrjSjnM36rssSrTe9QNIleqb-Nd9ZU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
