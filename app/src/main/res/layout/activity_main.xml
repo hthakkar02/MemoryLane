@@ -2,17 +2,89 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/relativeLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="#03A9F4">
+
+    <!-- This ImageView represents the dotted line path -->
+    <!-- Assuming the paper plane icon drawable is at the start of the path -->
+<!--    <ImageView-->
+<!--        android:id="@+id/paperPlaneIcon"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:src="@drawable/paper_plane"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintHorizontal_bias="0.5"-->
+<!--        app:layout_constraintVertical_bias="0.5" />-->
+
+<!--    <ImageView-->
+<!--        android:id="@+id/dottedPath"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:src="@drawable/dotted_path"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/paperPlaneIcon"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintHorizontal_bias="0.5"-->
+<!--        app:layout_constraintVertical_bias="0.0" />-->
 
     <TextView
+        android:id="@+id/memoryLaneTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
+        android:layout_marginBottom="4dp"
+        android:text="Memory Lane"
+        android:textColor="#FFFFFF"
+        android:textSize="40sp"
+        app:layout_constraintBottom_toTopOf="@id/tagLine"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.245"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tagLine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="60dp"
+        android:text="Capture Moments, Map Memories"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toTopOf="@id/loginButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.207"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/loginButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FFFFFF"
+        android:text="Log in"
+        android:textColor="#03A9F4"
+        app:cornerRadius="5dp"
+        app:layout_constraintBottom_toTopOf="@id/signUpButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintWidth_percent="0.8" />
+
+    <Button
+        android:id="@+id/signUpButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:backgroundTint="#03A9F4"
+        android:text="Sign up"
+        android:textColor="#FFFFFF"
+        app:cornerRadius="5dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintWidth_percent="0.8"
+        app:strokeColor="#FFFFFF"
+        app:strokeWidth="2dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
