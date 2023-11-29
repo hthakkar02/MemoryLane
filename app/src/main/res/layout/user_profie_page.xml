@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+android:layout_height="match_parent">
+
+<!-- User Name -->
+    <TextView
+        android:layout_marginTop="50dp"
+        android:id="@+id/tvUserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:text="Username"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textSize="34sp" />
+
+<!-- Real Name -->
+    <TextView
+        android:id="@+id/tvRealName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvUserName"
+        android:layout_centerHorizontal="true"
+        android:text="Name"
+        android:textSize="16sp" />
+
+<!-- Divider-->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="300dp"
+        android:layout_marginTop="50dp"
+        android:layout_height="2.5dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/tvRealName"
+        android:background="@color/black" />
+
+<!-- Profile Image -->
+    <ImageView
+        android:id="@+id/ivProfile"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_below="@id/divider"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:src="@android:drawable/ic_menu_gallery"
+        app:srcCompat="@mipmap/user_temp_icon" />
+
+<!-- Memories Made -->
+<TextView
+    android:id="@+id/tvMemoriesMade"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Memories Made: #"
+    android:layout_below="@id/ivProfile"
+    android:layout_centerHorizontal="true"
+    android:layout_marginTop="16dp"/>
+
+<!-- Change Password Button -->
+    <Button
+        android:id="@+id/btnChangePassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvMemoriesMade"
+        android:layout_marginTop="24dp"
+        android:backgroundTint="#92938D"
+        android:text="Change Password"
+        android:layout_centerHorizontal="true"
+        android:textColor="#000000" />
+
+    <!-- Change Username Button -->
+    <Button
+        android:id="@+id/btnChangeUsername"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/btnChangePassword"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#D1CBCB"
+        android:text="Change Username"
+        android:textColor="#000000" />
+
+    <!-- Delete Profile Button -->
+    <Button
+        android:id="@+id/btnDeleteProfile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnChangeUsername"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="70dp"
+        android:backgroundTint="#D32F2F"
+        android:text="Delete Profile"
+        android:textColor="#ffffff" />
+
+
+</RelativeLayout>
