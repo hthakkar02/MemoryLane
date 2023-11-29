@@ -3,12 +3,14 @@ package com.cs407.memorylane;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.res.AssetManager;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -30,6 +32,44 @@ public class dataTest extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_data_test);
 
+    }
+
+    /**
+     *
+     */
+    protected void createNewUserDocument(){
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Access the "User Data" collection
+        CollectionReference collectionReference = db.collection("User Data");
+
+        // Create a map representing the new user data
+        Map<String, Object> newUser = new HashMap<>();
+        newUser.put("Email", "newuser@example.com");
+        newUser.put("Name", "New User");
+        newUser.put("UserID", "67890");
+        newUser.put("Username", "newuser");
+        List<String> friendsList = new ArrayList<>();
+        friendsList.add("friend3@example.com");
+        friendsList.add("friend4@example.com");
+        newUser.put("Friends", friendsList);
+
+        // Add the new document to the "User Data" collection
+        collectionReference.add(newUser)
+                .addOnSuccessListener(documentReference -> {
+                    // Document added with ID: documentReference.getId()
+                    Log.d("Firestore", "Document added with ID: " + documentReference.getId());
+                })
+                .addOnFailureListener(e -> {
+                    // Handle failure
+                    Log.e("Firestore", "Error adding document", e);
+                });
+    }
+
+    /**
+     *
+     */
+    protected void retrieveCollectionContent(){
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         // Access the "User Data" collection
@@ -55,36 +95,18 @@ public class dataTest extends AppCompatActivity {
                 Log.e("Firestore", "Error getting documents: " + task.getException());
             }
         });
+    }
 
-        // Create a map representing the new user data
-        Map<String, Object> newUser = new HashMap<>();
-        newUser.put("Email", "newuser@example.com");
-        newUser.put("Name", "New User");
-        newUser.put("UserID", "67890");
-        newUser.put("Username", "newuser");
-        List<String> friendsList = new ArrayList<>();
-        friendsList.add("friend3@example.com");
-        friendsList.add("friend4@example.com");
-        newUser.put("Friends", friendsList);
-
-        // Add the new document to the "User Data" collection
-        db.collection("User Data").add(newUser)
-                .addOnSuccessListener(documentReference -> {
-                    // Document added with ID: documentReference.getId()
-                    Log.d("Firestore", "Document added with ID: " + documentReference.getId());
-                })
-                .addOnFailureListener(e -> {
-                    // Handle failure
-                    Log.e("Firestore", "Error adding document", e);
-                });
-
-
-        //Upload Photo from assets folder:
+    /**
+     *
+     */
+    protected void uploadLocalPhoto(){
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
-        String assetFileName = "Free_Sunset_Background_Vector.png";
-        String destinationFileName = "uploaded_image.png";
+        String assetFileName = "fifa.HEIC";
+        String destinationFileName = "fifa.HEIC";
+
 
         try {
             // Open asset file descriptor
@@ -120,6 +142,7 @@ public class dataTest extends AppCompatActivity {
                         imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                             String downloadUrl = uri.toString();
                             Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
+                            addPhotoToCollection("images/" + destinationFileName, fileUri);
                             // Use the URL as needed
                         });
                     })
@@ -131,7 +154,55 @@ public class dataTest extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
+
+    /**
+     *
+     * @param referencePath
+     * @param fileUri
+     */
+    protected void addPhotoToCollection(String referencePath, Uri fileUri){
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference collectionReference = db.collection("All Photos");
+        GeoPoint location = null;
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
+            if (inputStream != null) {
+                ExifInterface exifInterface = new ExifInterface(inputStream);
+                float[] latLong = new float[2];
+                boolean hasLatLong = exifInterface.getLatLong(latLong);
+                if (hasLatLong) {
+                    float latitude = latLong[0];
+                    float longitude = latLong[1];
+                    // Use latitude and longitude as needed
+                    location = new GeoPoint(latitude, longitude);
+
+                } else {
+                    // No location information available
+                    Log.d("No Location", "Photo doesn't have a location");
+                    location = new GeoPoint(0.0, 0.0);
+                }
+                inputStream.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Map<String, Object> newPhoto  = new HashMap<>();
+        newPhoto.put("Description", "This is a beautiful photo");
+        newPhoto.put("Location", location);
+        newPhoto.put("Owner", db.collection("User Data").document("user000001"));
+        newPhoto.put("Path", referencePath);
+
+        collectionReference.add(newPhoto)
+                .addOnSuccessListener(documentReference -> {
+                    // Document added with ID: documentReference.getId()
+                    Log.d("Firestore", "Document added with ID: " + documentReference.getId());
+                })
+                .addOnFailureListener(e -> {
+                    // Handle failure
+                    Log.e("Firestore", "Error adding document", e);
+                });
+    }
+
 }
