@@ -2,6 +2,7 @@ package com.cs407.memorylane;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,7 +52,7 @@ public class ImageGridAdapter extends RecyclerView.Adapter<ImageGridAdapter.View
         }
 
         void bind(Uri imageUri) {
-            // Load image using a library like Glide or Picasso
+            Log.d("ViewHolder", "Binding image: " + imageUri.toString());
             Glide.with(itemView.getContext())
                     .load(imageUri)
                     .into(imageView);
