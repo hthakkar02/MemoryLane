@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">memorylane</string>
+    <string name="title_friends">Friends</string>
+    <string name="title_camera">Camera</string>
+    <string name="title_home">Home</string>
+    <string name="title_upload">Upload</string>
+    <string name="title_search">Search</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
