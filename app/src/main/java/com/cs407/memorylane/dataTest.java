@@ -37,9 +37,10 @@ public class dataTest extends AppCompatActivity {
 
     /**
      * Tested with loadImageReferenceFromUser("/User Data/user000001");
+     *
      * @param owner is the unique identifier for the user in the All Users collection
      */
-    protected void loadImageReferenceFromUser(String owner){
+    protected void loadImageReferenceFromUser(String owner) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference ownerRef = db.document(owner); // Create a reference to the owner document
 
@@ -54,7 +55,7 @@ public class dataTest extends AppCompatActivity {
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             String path = document.getString("Path");
                             // Retrieve the path to the image in Firebase Storage and display it in your app
-                            Log.d("PhotoData", "This is the path: "+ path);
+                            Log.d("PhotoData", "This is the path: " + path);
                         }
                     } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
@@ -65,7 +66,7 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void createNewUserDocument(){
+    protected void createNewUserDocument() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         // Access the "User Data" collection
@@ -97,7 +98,7 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void retrieveCollectionContent(){
+    protected void retrieveCollectionContent() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         // Access the "User Data" collection
@@ -128,7 +129,7 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void uploadLocalPhoto(){
+    protected void uploadLocalPhoto() {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
@@ -185,11 +186,10 @@ public class dataTest extends AppCompatActivity {
     }
 
     /**
-     *
      * @param referencePath
      * @param fileUri
      */
-    protected void addPhotoToCollection(String referencePath, Uri fileUri){
+    protected void addPhotoToCollection(String referencePath, Uri fileUri) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
@@ -216,7 +216,7 @@ public class dataTest extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        Map<String, Object> newPhoto  = new HashMap<>();
+        Map<String, Object> newPhoto = new HashMap<>();
         newPhoto.put("Description", "This is a beautiful photo");
         newPhoto.put("Location", location);
         newPhoto.put("Owner", db.collection("User Data").document("user000001"));
