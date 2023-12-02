@@ -40,6 +40,8 @@ public class homeActivity extends FragmentActivity {
             newFragment = new CameraFragment();
         } else if (itemId == R.id.navigation_upload) {
             newFragment = new UploadFragment();
+        } else if (itemId == R.id.navigation_search) {
+            newFragment = new SearchFragment();
         }
 
         if (newFragment != null) {
