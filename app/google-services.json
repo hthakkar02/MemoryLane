@@ -12,7 +12,20 @@
           "package_name": "com.cs407.memorylane"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "124067845020-t8b5e840vkij6grrvndchbai0oaeotiq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cs407.memorylane",
+            "certificate_hash": "45357f8d43e479b20ef17e4b1721bc387d73de96"
+          }
+        },
+        {
+          "client_id": "124067845020-62lvalqtr3caov6i3hl4cjsjti97dtql.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA20DrjSjnM36rssSrTe9QNIleqb-Nd9ZU"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "124067845020-62lvalqtr3caov6i3hl4cjsjti97dtql.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
