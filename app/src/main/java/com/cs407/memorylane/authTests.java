@@ -19,7 +19,14 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class authTests extends AppCompatActivity {
@@ -106,24 +113,61 @@ public class authTests extends AppCompatActivity {
      * @param email
      * @param password
      */
-    protected void signUpUser(String email, String password){
+    protected CompletableFuture<Boolean> signUpUser(String email, String password) {
         mAuth = FirebaseAuth.getInstance();
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d("Successful User Sign up", "createUserWithEmail:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w("Failed User Sign up", "createUserWithEmail:failure", task.getException());
+        CompletableFuture<Boolean> signUpFuture = new CompletableFuture<>();
 
-                        }
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("Successful User Sign up", "createUserWithEmail:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        // Write contents of user to a if needed
+
+                        signUpFuture.complete(true); // Sign-up successful
+                    } else {
+                        Log.w("Failed User Sign up", "createUserWithEmail:failure", task.getException());
+                        signUpFuture.complete(false); // Sign-up failed
                     }
                 });
+
+
+        return signUpFuture;
     }
+
+
+
+    /**
+     *
+     */
+    protected void createNewUserDuringSignUp(String username, String email) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Access the "User Data" collection
+        CollectionReference collectionReference = db.collection("User Data");
+
+        // Create a map representing the new user data
+        Map<String, Object> newUser = new HashMap<>();
+        newUser.put("Email", email);
+        newUser.put("Username", username);
+        List<String> friendsList = new ArrayList<>();
+        newUser.put("Friends", friendsList);
+
+        // Add the new document to the "User Data" collection
+        collectionReference.add(newUser)
+                .addOnSuccessListener(documentReference -> {
+                    // Document added with ID: documentReference.getId()
+                    Log.d("Firestore", "Document added with ID: " + documentReference.getId());
+                })
+                .addOnFailureListener(e -> {
+                    // Handle failure
+                    Log.e("Firestore", "Error adding document", e);
+                });
+    }
+
+
+
+
 
     /**
      * Sign in user via email and password.

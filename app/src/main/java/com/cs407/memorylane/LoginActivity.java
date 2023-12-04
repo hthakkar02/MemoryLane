@@ -33,8 +33,8 @@ public class LoginActivity extends AppCompatActivity {
                 String email = emailTextView.getText().toString();
                 String password = passwordTextView.getText().toString();
 
-                if(email == "" || password == ""){
-                    Log.e("Missing info","either the password or email is missing");
+                if(!emptyFieldsCheck()){
+                    return;
                 }
 
 
@@ -45,7 +45,7 @@ public class LoginActivity extends AppCompatActivity {
                         .thenAccept(isSignInSuccessful -> {
                             if (isSignInSuccessful) {
                                 // Code to execute when sign-in is successful
-                                Log.d("User Type", "");
+                                //Log.d("User Type", "");
                                 startActivity(intent);
                                 finish();
                             } else {
@@ -62,8 +62,41 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
+
+                TextView emailTextView = findViewById(R.id.emailInput);
+                TextView passwordTextView = findViewById(R.id.passwordInput);
+
+                String email = emailTextView.getText().toString();
+                String password = passwordTextView.getText().toString();
+
+                intent.putExtra("email",email);
+                intent.putExtra("password",password);
+
+
                 startActivity(intent);
+
+
             }
         });
+    }
+
+    /**
+     * checks fields for login
+     *
+     * @returns false when fields are empty
+     */
+    private boolean emptyFieldsCheck() {
+        //check fields are not empty
+        TextView emailTextView = findViewById(R.id.emailInput);
+        TextView passwordTextView = findViewById(R.id.passwordInput);
+
+        String email = emailTextView.getText().toString();
+        String password = passwordTextView.getText().toString();
+
+        if(email == "" || password == ""){
+            Log.e("Missing info","either the password or email is missing");
+            return false;
+        }
+        return true;
     }
 }
