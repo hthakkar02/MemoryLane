@@ -22,6 +22,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +46,42 @@ public class UploadFragment extends Fragment {
 
         checkPermissionsAndLoadImages();
 
+        adapter.setOnImageSelectedListener(uri -> {
+            // Handle the selection change if needed
+        });
+
+        // Assuming you have a button to trigger upload
+        Button uploadButton = view.findViewById(R.id.upload_button);
+        uploadButton.setOnClickListener(v -> uploadSelectedImages());
+
         return view;
+    }
+
+    private void uploadSelectedImages() {
+        List<Uri> selectedUris = adapter.getSelectedUris();
+        for (Uri uri : selectedUris) {
+            // Convert Uri to File
+            File file = uriToFile(uri);
+            if (file != null) {
+                dataTest dT = new dataTest();
+                dT.uploadLocalPhoto(file);
+            }
+        }
+    }
+
+    private File uriToFile(Uri uri) {
+        String filePath = null;
+        String[] projection = { MediaStore.Images.Media.DATA };
+        Cursor cursor = getContext().getContentResolver().query(uri, projection, null, null, null);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                filePath = cursor.getString(columnIndex);
+            }
+            cursor.close();
+        }
+
+        return filePath != null ? new File(filePath) : null;
     }
 
 
