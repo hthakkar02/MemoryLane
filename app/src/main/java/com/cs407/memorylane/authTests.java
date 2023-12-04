@@ -160,7 +160,7 @@ public class authTests extends AppCompatActivity {
                     // Document added with ID: documentReference.getId()
                     Log.d("Firestore", "Document added with ID: " + documentReference.getId());
                     dataTest dataTest = new dataTest();
-                    dataTest.storeUserIDToSharedPreferences(documentReference.getId());
+                    //dataTest.storeUserIDToSharedPreferences(documentReference.getId());
 
                 })
                 .addOnFailureListener(e -> {
