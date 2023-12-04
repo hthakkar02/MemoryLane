@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SlideshowInfoFragment">
+
+    <FrameLayout
+        android:id="@+id/BackgroundFrame"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_gravity="bottom"
+        android:background="#D3D3D3" >
+
+        <ImageButton
+            android:id="@+id/menu_down_button"
+            android:layout_width="51dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_horizontal|top"
+            android:src="@mipmap/menu_down_button" />
+
+        <TextView
+            android:id="@+id/area"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="60dp"
+            android:fontFamily="monospace"
+            android:text="Mifflin West"
+            android:textSize="34sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/area"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="4dp"
+            android:textSize="17dp"
+            android:text="May 28, 2021" />
+
+        <TextView
+            android:id="@+id/address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="20dp"
+            android:text="Address" />
+
+        <TextView
+            android:id="@+id/user"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:layout_marginBottom="20dp"
+            android:textSize="20dp"
+            android:text="username" />
+        <!-- How to layer the text one after the other?-->
+
+    </FrameLayout>
+    
+</FrameLayout>
