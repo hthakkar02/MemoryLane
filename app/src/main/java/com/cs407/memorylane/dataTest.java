@@ -2,6 +2,8 @@ package com.cs407.memorylane;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -95,6 +97,20 @@ public class dataTest extends AppCompatActivity {
                     // Handle failure
                     Log.e("Firestore", "Error adding document", e);
                 });
+    }
+
+
+    /**
+     * Stores the userID till app terminates. userID = document name in user data collection from DB in firestore
+     *
+     * @param userId
+     */
+    protected void storeUserIDToSharedPreferences(String userId){
+        // Saves user data to shared preferences till app terminates
+        SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("userID", userId);
+        editor.apply();
     }
 
     /**

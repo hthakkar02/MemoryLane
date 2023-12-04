@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -158,6 +159,9 @@ public class authTests extends AppCompatActivity {
                 .addOnSuccessListener(documentReference -> {
                     // Document added with ID: documentReference.getId()
                     Log.d("Firestore", "Document added with ID: " + documentReference.getId());
+                    dataTest dataTest = new dataTest();
+                    dataTest.storeUserIDToSharedPreferences(documentReference.getId());
+
                 })
                 .addOnFailureListener(e -> {
                     // Handle failure
