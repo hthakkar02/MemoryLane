@@ -50,6 +50,12 @@
             android:name=".LoginActivity"
             android:exported="false" />
         <activity
+            android:name=".authTests"
+            android:exported="false" />
+        <activity
+            android:name=".dataTest"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true" >
             <intent-filter>
