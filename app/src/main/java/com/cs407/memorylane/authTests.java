@@ -20,6 +20,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
+import java.util.concurrent.CompletableFuture;
+
 public class authTests extends AppCompatActivity {
 
     protected FirebaseAuth mAuth;
@@ -124,29 +126,37 @@ public class authTests extends AppCompatActivity {
     }
 
     /**
-     * Sign in user via email and password
+     * Sign in user via email and password.
+     *
+     * @returns true when sign in is a success
      *
      * @param email
      * @param password
      */
-    protected void signInUser(String email, String password) {
+    protected CompletableFuture<Boolean> signInUser(String email, String password) {
         mAuth = FirebaseAuth.getInstance();
+        CompletableFuture<Boolean> signInFuture = new CompletableFuture<>();
 
         mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d("Successful User Sign In", "signInWithEmail:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w("Failed User Sign In", "signInWithEmail:failure", task.getException());
-                        }
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        // Sign in success, update UI with the signed-in user's information
+                        Log.d("Successful User Sign In", "signInWithEmail:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        // Write contents of user to a
+
+                        signInFuture.complete(true); // Sign-in successful
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        Log.w("Failed User Sign In", "signInWithEmail:failure", task.getException());
+
+                        signInFuture.complete(false); // Sign-in failed
                     }
                 });
+
+        return signInFuture;
     }
+
 
     /**
      * This method gets back a specified users info
