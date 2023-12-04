@@ -10,10 +10,10 @@ import android.view.ViewGroup;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link SllideshowInfoFragment#newInstance} factory method to
+ * Use the {@link SlideshowInfoFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class SllideshowInfoFragment extends Fragment {
+public class SlideshowInfoFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -24,7 +24,7 @@ public class SllideshowInfoFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    public SllideshowInfoFragment() {
+    public SlideshowInfoFragment() {
         // Required empty public constructor
     }
 
@@ -37,8 +37,8 @@ public class SllideshowInfoFragment extends Fragment {
      * @return A new instance of fragment SllideshowInfoFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static SllideshowInfoFragment newInstance(String param1, String param2) {
-        SllideshowInfoFragment fragment = new SllideshowInfoFragment();
+    public static SlideshowInfoFragment newInstance(String param1, String param2) {
+        SlideshowInfoFragment fragment = new SlideshowInfoFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
