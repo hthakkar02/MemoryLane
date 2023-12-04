@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">memorylane</string>
+    <string name="default_web_client_id">288241417358-dscb1c05el7idri5bh3lju5kpano8ci1.apps.googleusercontent.com</string>
     <string name="title_friends">Friends</string>
     <string name="title_camera">Camera</string>
     <string name="title_home">Home</string>
