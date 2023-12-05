@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "124067845020-v0dj23h2sjhqppjr2g959on6jv5o6ouc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cs407.memorylane",
+            "certificate_hash": "941208fde6ba2f96c329b80e4f5ac1c23d7f7064"
+          }
+        },
+        {
           "client_id": "124067845020-62lvalqtr3caov6i3hl4cjsjti97dtql.apps.googleusercontent.com",
           "client_type": 3
         }

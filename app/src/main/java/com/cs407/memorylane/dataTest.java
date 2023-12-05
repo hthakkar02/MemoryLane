@@ -2,6 +2,7 @@ package com.cs407.memorylane;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -129,7 +130,7 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void uploadLocalPhoto(File file) {
+    protected void uploadLocalPhoto(Context context, File file) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
@@ -144,7 +145,7 @@ public class dataTest extends AppCompatActivity {
                     imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                         String downloadUrl = uri.toString();
                         Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
-                        addPhotoToCollection("images/" + destinationFileName, fileUri);
+                        addPhotoToCollection(context,"images/" + destinationFileName, fileUri);
                         // Use the URL as needed
                     });
                 })
@@ -159,12 +160,12 @@ public class dataTest extends AppCompatActivity {
      * @param referencePath
      * @param fileUri
      */
-    protected void addPhotoToCollection(String referencePath, Uri fileUri) {
+    protected void addPhotoToCollection(Context context, String referencePath, Uri fileUri) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
         try {
-            InputStream inputStream = getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
+            InputStream inputStream = context.getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
             if (inputStream != null) {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];

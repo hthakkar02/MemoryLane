@@ -64,7 +64,7 @@ public class UploadFragment extends Fragment {
             File file = uriToFile(uri);
             if (file != null) {
                 dataTest dT = new dataTest();
-                dT.uploadLocalPhoto(file);
+                dT.uploadLocalPhoto(getContext(), file);
             }
         }
     }
