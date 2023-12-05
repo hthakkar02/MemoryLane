@@ -286,7 +286,7 @@ public class CameraFragment extends Fragment {
 
                     File file = new File(getRealPathFromURI(fileUri));
                     dataTest dT = new dataTest();
-                    dT.uploadLocalPhoto(file); // Call to upload the photo
+//                    dT.uploadLocalPhoto(file); // Call to upload the photo
                 }
             };
 
