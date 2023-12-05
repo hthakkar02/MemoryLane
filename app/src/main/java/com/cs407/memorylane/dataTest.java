@@ -147,76 +147,47 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void uploadLocalPhoto() {
+    protected void uploadLocalPhoto(Context context, Uri fileUri) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
-        String assetFileName = "fifa.HEIC";
-        String destinationFileName = "fifa.HEIC";
+        String destinationFileName = fileUri.getLastPathSegment(); // Adjust to extract the file name correctly
+        StorageReference imageRef = storageRef.child("images/" + destinationFileName);
 
-
-        try {
-            // Open asset file descriptor
-            AssetManager assetManager = getAssets();
-            InputStream inputStream = assetManager.open(assetFileName);
-
-            // Create a temporary file in internal storage
-            File internalFile = new File(getFilesDir(), destinationFileName);
-            FileOutputStream outputStream = new FileOutputStream(internalFile);
-
-            // Copy the content from assets to the internal file
-            byte[] buffer = new byte[1024];
-            int read;
-            while ((read = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, read);
-            }
-
-            // Close streams
-            inputStream.close();
-            outputStream.flush();
-            outputStream.close();
-
-            // Get Uri for the internal file
-            Uri fileUri = Uri.fromFile(internalFile);
-
-            // Create a reference to the location in Firebase Storage where the file will be uploaded
-            StorageReference imageRef = storageRef.child("images/" + destinationFileName);
-
-            // Upload the file to Firebase Storage
-            imageRef.putFile(fileUri)
-                    .addOnSuccessListener(taskSnapshot -> {
-                        // Handle successful upload
-                        imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                            String downloadUrl = uri.toString();
-                            Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
-                            addPhotoToCollection("images/" + destinationFileName, fileUri);
-                            // Use the URL as needed
-                        });
-                    })
-                    .addOnFailureListener(exception -> {
-                        // Handle unsuccessful upload
-                        Log.e("FirebaseUpload", "Upload failed: " + exception.getMessage());
+        imageRef.putFile(fileUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    // Handle successful upload
+                    imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        String downloadUrl = uri.toString();
+                        Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
+                        addPhotoToCollection(context, "images/" + destinationFileName, fileUri);
+                        // Use the URL as needed
                     });
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+                })
+                .addOnFailureListener(exception -> {
+                    // Handle unsuccessful upload
+                    Log.e("FirebaseUpload", "Upload failed: " + exception.getMessage());
+                });
     }
+
+
 
     /**
      * @param referencePath
      * @param fileUri
      */
-    protected void addPhotoToCollection(String referencePath, Uri fileUri) {
+    protected void addPhotoToCollection(Context context, String referencePath, Uri fileUri) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
         try {
-            InputStream inputStream = getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
+            InputStream inputStream = context.getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
             if (inputStream != null) {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];
                 boolean hasLatLong = exifInterface.getLatLong(latLong);
+                Log.d("HenryLocation", ""+latLong[0]);
+                Log.d("HENRYBOOLEAN", ""+hasLatLong);
                 if (hasLatLong) {
                     float latitude = latLong[0];
                     float longitude = latLong[1];
