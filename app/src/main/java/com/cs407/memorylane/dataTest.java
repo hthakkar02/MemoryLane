@@ -130,13 +130,11 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void uploadLocalPhoto(Context context, File file) {
+    protected void uploadLocalPhoto(Context context, Uri fileUri) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
-        String destinationFileName = file.getName();
-        Uri fileUri = Uri.fromFile(file);
-
+        String destinationFileName = fileUri.getLastPathSegment(); // Adjust to extract the file name correctly
         StorageReference imageRef = storageRef.child("images/" + destinationFileName);
 
         imageRef.putFile(fileUri)
@@ -145,7 +143,7 @@ public class dataTest extends AppCompatActivity {
                     imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                         String downloadUrl = uri.toString();
                         Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
-                        addPhotoToCollection(context,"images/" + destinationFileName, fileUri);
+                        addPhotoToCollection(context, "images/" + destinationFileName, fileUri);
                         // Use the URL as needed
                     });
                 })
@@ -154,6 +152,7 @@ public class dataTest extends AppCompatActivity {
                     Log.e("FirebaseUpload", "Upload failed: " + exception.getMessage());
                 });
     }
+
 
 
     /**

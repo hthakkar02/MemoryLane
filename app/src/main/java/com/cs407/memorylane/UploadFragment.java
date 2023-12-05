@@ -60,12 +60,8 @@ public class UploadFragment extends Fragment {
     private void uploadSelectedImages() {
         List<Uri> selectedUris = adapter.getSelectedUris();
         for (Uri uri : selectedUris) {
-            // Convert Uri to File
-            File file = uriToFile(uri);
-            if (file != null) {
-                dataTest dT = new dataTest();
-                dT.uploadLocalPhoto(getContext(), file);
-            }
+            dataTest dT = new dataTest();
+            dT.uploadLocalPhoto(getContext(), uri);
         }
     }
 
