@@ -170,6 +170,8 @@ public class dataTest extends AppCompatActivity {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];
                 boolean hasLatLong = exifInterface.getLatLong(latLong);
+                Log.d("HenryLocation", ""+latLong[0]);
+                Log.d("HENRYBOOLEAN", ""+hasLatLong);
                 if (hasLatLong) {
                     float latitude = latLong[0];
                     float longitude = latLong[1];
