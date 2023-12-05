@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -22,11 +23,12 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
 
 
-public class MapsFragment extends Fragment implements OnMapReadyCallback {
+public class MapsFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
@@ -63,6 +65,22 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
+
+        // Set the marker click listener
+        mMap.setOnMarkerClickListener(this);
+    }
+
+    public boolean onMarkerClick(Marker marker) {
+        // Replace with the desired fragment
+        Fragment newFragment = new SlideshowInfoFragment(); // Replace with your target fragment
+
+        // Perform the fragment transaction
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, newFragment); // Replace 'your_fragment_container' with your actual container ID
+        transaction.addToBackStack(null); // Add this transaction to the back stack (optional)
+        transaction.commit();
+
+        return true; // Return true to indicate that we have handled this event
     }
 
     private void getDeviceLocation() {
@@ -77,6 +95,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                 new LatLng(lastKnownLocation.getLatitude(),
                                         lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+
+                        LatLng currentLatLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+                        // Add a marker at the current location
+                        mMap.addMarker(new MarkerOptions()
+                                .position(currentLatLng)
+                                .title("Current Location"));
                     } else {
                         Log.d("MapFragment", "Current location is null. Using defaults.");
                         mMap.moveCamera(CameraUpdateFactory
@@ -100,6 +124,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     == PackageManager.PERMISSION_GRANTED) {
                 mMap.setMyLocationEnabled(true);
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
+
+                // Enable zoom controls
+                mMap.getUiSettings().setZoomControlsEnabled(true);
+
             } else {
                 mMap.setMyLocationEnabled(false);
                 mMap.getUiSettings().setMyLocationButtonEnabled(false);

@@ -208,7 +208,7 @@ public class dataTest extends AppCompatActivity {
         Map<String, Object> newPhoto = new HashMap<>();
         newPhoto.put("Description", "This is a beautiful photo");
         newPhoto.put("Location", location);
-        newPhoto.put("Owner", db.collection("User Data").document("user000001"));
+        newPhoto.put("Owner", db.collection("User Data").document(context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in")));
         newPhoto.put("Path", referencePath);
 
         collectionReference.add(newPhoto)
