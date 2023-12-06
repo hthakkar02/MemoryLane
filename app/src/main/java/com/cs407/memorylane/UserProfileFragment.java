@@ -44,12 +44,9 @@ public class UserProfileFragment extends Fragment {
     public void setProfileInfo() {
         // Retrieve information about dude from userID
         dataTest dataTest = new dataTest();
-        dataTest.retrieveUserInfo(userID, new com.cs407.memorylane.dataTest.UserInfoCallback() {
-            @Override
-            public void onUserInfoRetrieved(ArrayList<String> info) {
-                for (String element : info) {
-                    Log.d("Profile Info Test", element);
-                }
+        dataTest.retrieveUserInfo(userID, info -> {
+            for (String element : info) {
+                Log.d("Profile Info Test", element);
             }
         });
     }

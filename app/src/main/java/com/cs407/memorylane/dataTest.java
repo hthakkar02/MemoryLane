@@ -255,32 +255,40 @@ public class dataTest extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         CollectionReference userDataCollection = db.collection("User Data");
-        Query userQuery = userDataCollection.whereEqualTo("userID", userID);
+        DocumentReference userDocument = userDataCollection.document(userID);
 
-        userQuery.get().addOnCompleteListener(task -> {
+        userDocument.get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                ArrayList<String> daInfo = new ArrayList<>();
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    String username = document.getString("username");
-                    daInfo.add(username);
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    // Document exists, retrieve the username
+                    String username = document.getString("Username");
+                    Log.d("Profile Info Test", "Username: " + username);
+
+                    // Retrieve ownerRef after getting username
+                    DocumentReference ownerRef = db.collection("User Data").document(userID);
+
+                    // Retrieve memories made from all photos
+                    db.collection("All Photos")
+                            .whereEqualTo("Owner", ownerRef)
+                            .get()
+                            .addOnCompleteListener(photoTask -> {
+                                if (photoTask.isSuccessful()) {
+                                    int totalMemories = photoTask.getResult().size();
+                                    ArrayList<String> daInfo = new ArrayList<>();
+                                    daInfo.add(username); // Add username to the ArrayList
+                                    daInfo.add(String.valueOf(totalMemories)); // Add totalMemories to the ArrayList
+                                    callback.onUserInfoRetrieved(daInfo);
+                                } else {
+                                    Log.e("Firestore", "Error getting photos: ", photoTask.getException());
+                                }
+                            });
+                } else {
+                    // Document does not exist
+                    Log.d("Firestore", "No such document");
                 }
-
-                DocumentReference ownerRef = db.collection("User Data").document(userID);
-
-                db.collection("All Photos")
-                        .whereEqualTo("Owner", ownerRef)
-                        .get()
-                        .addOnCompleteListener(photoTask -> {
-                            if (photoTask.isSuccessful()) {
-                                int totalMemories = photoTask.getResult().size();
-                                daInfo.add(String.valueOf(totalMemories));
-                                callback.onUserInfoRetrieved(daInfo);
-                            } else {
-                                Log.e("Firestore", "Error getting photos: ", photoTask.getException());
-                            }
-                        });
-
             } else {
+                // Handle errors
                 Log.e("Firestore", "Error getting user data: ", task.getException());
             }
         });
