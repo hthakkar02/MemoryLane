@@ -55,7 +55,6 @@ public class SlideshowPagerAdapter extends PagerAdapter {
             }
         });
 
-
         container.addView(view);
         return view;
     }
