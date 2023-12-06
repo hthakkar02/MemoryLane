@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.Query;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class dataTest extends AppCompatActivity {
 
@@ -70,7 +72,7 @@ public class dataTest extends AppCompatActivity {
 
 
     // Function to download an image from Firebase Storage
-    protected void downloadImage(String imagePath) {
+    protected void downloadImage(String imagePath, ImageDownloadedCallback callback) {
         StorageReference storageRef = FirebaseStorage.getInstance().getReference();
         StorageReference imageRef = storageRef.child(imagePath);
 
@@ -82,6 +84,7 @@ public class dataTest extends AppCompatActivity {
             addBitmapToCache(imagePath, bitmap);
 
             Log.d("ImageCache", "Image cached successfully");
+            callback.onImageDownloaded(imagePath);
         }).addOnFailureListener(exception -> {
             // Handle errors
             exception.printStackTrace();
@@ -121,7 +124,6 @@ public class dataTest extends AppCompatActivity {
     }
 
 
-
 //    protected List<String> searchUserByUsernameSubstring(String substring) {
 //        FirebaseFirestore db = FirebaseFirestore.getInstance();
 //        CollectionReference userDataCollection = db.collection("User Data");
@@ -149,42 +151,48 @@ public class dataTest extends AppCompatActivity {
 //        }
 //    }
 
-    /**
-     * Tested with loadImageReferenceFromUser("/User Data/user000001");
-     *
-     * @param owner is the unique identifier for the user in the All Users collection
-     */
-    protected void loadImagesFromUser(Context context) {
+    public interface OnImagesLoadedListener {
+        void onImagesLoaded(ArrayList<String> imagePaths);
+    }
+
+    public interface ImageDownloadedCallback {
+        void onImageDownloaded(String key);
+    }
+
+    protected void loadImagesFromUser(Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
         DocumentReference ownerRef = db.collection("User Data").document(owner); // Create a reference to the owner document
 
         Log.d("STATUS", "Getting here");
 
-        List<String> imagePaths = new ArrayList<>(); // List to store image paths
-
         db.collection("All Photos")
                 .whereEqualTo("Owner", ownerRef)
                 .get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String path = document.getString("Path");
-                            // Retrieve the path to the image in Firebase Storage and add it to the list
-                            Log.d("PhotoData", "This is the path: " + path);
-                            imagePaths.add(path);
-                        }
+                            if (task.isSuccessful() && task.getResult() != null) {
+                                List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                                int totalImages = documents.size();
+                                if (totalImages == 0) {
+                                    listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                                }
 
-                        // Now, you can use the imagePaths list directly
-                        for (String imagePath : imagePaths) {
-                            downloadImage(imagePath);
-                        }
-                    } else {
+                                AtomicInteger completedDownloads = new AtomicInteger(0);
+                                for (DocumentSnapshot document : documents) {
+                                    String path = document.getString("Path");
+                                    downloadImage(path, key -> {
+                                        imageDownloadedCallback.onImageDownloaded(key);
+                                        if (completedDownloads.incrementAndGet() == totalImages) {
+                                            // All images have been downloaded and cached
+                                            listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                        }
+                                    });
+                                }
+                            } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
                     }
                 });
     }
-
 
 
 
@@ -226,7 +234,7 @@ public class dataTest extends AppCompatActivity {
      *
      * @param userId
      */
-    protected void storeUserIDToSharedPreferences(String userId){
+    protected void storeUserIDToSharedPreferences(String userId) {
         // Saves user data to shared preferences till app terminates
         SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
         SharedPreferences.Editor editor = preferences.edit();
@@ -293,8 +301,6 @@ public class dataTest extends AppCompatActivity {
                     Toast.makeText(context, "Upload failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
-
 
 
     /**

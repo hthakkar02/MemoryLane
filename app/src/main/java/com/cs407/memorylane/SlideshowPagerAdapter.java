@@ -1,7 +1,9 @@
 package com.cs407.memorylane;
-import com.squareup.picasso.Picasso;
+//import com.squareup.picasso.Picasso;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,22 +11,26 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 
+import java.util.ArrayList;
+
 
 public class SlideshowPagerAdapter extends PagerAdapter {
 
     private Context context;
+    private ArrayList<String> photoUrls;
 
-    //For testing purpose only
-    private String[] photoUrls;
+    private dataTest dT;
+    // Holds keys/identifiers for images in the cache
 
-    public SlideshowPagerAdapter(Context context, String[] photoUrls) {
+    public SlideshowPagerAdapter(Context context, ArrayList<String> photoUrls, dataTest dT) {
         this.context = context;
         this.photoUrls = photoUrls;
+        this.dT = dT;
     }
 
     @Override
     public int getCount() {
-        return photoUrls.length;
+        return photoUrls.size();
     }
 
     @NonNull
@@ -34,8 +40,21 @@ public class SlideshowPagerAdapter extends PagerAdapter {
         View view = inflater.inflate(R.layout.item_slide, container, false);
         ImageView imageView = view.findViewById(R.id.imageView);
 
-        // Load and display the photo using Picasso (replace with your image loading library)
-        Picasso.get().load(photoUrls[position]).into(imageView);
+        String cacheKey = photoUrls.get(position);
+        Bitmap cachedImage = dT.getBitmapFromCache(cacheKey);
+        if (cachedImage != null) {
+            imageView.setImageBitmap(cachedImage);
+        } else {
+            Log.d("IMAGE ISSUE", "image not in cache");
+        }
+
+        dT.downloadImage(cacheKey, newKey -> {
+            Bitmap newCachedImage = dT.getBitmapFromCache(newKey);
+            if (newCachedImage != null) {
+                imageView.setImageBitmap(newCachedImage);
+            }
+        });
+
 
         container.addView(view);
         return view;
