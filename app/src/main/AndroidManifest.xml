@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.WRITE_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
 
     <application
@@ -38,7 +39,7 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY" />
+            android:value="AIzaSyChFA-QPEaSfmwg1WI0UwYknFwMM6ymqsU" />
 
         <activity
             android:name=".CustomFriendList"
@@ -52,6 +53,11 @@
         <activity
             android:name=".LoginActivity"
             android:exported="false" />
+        <activity
+            android:name=".ImageSlideshowActivity"
+            android:label="Image Slideshow Activity"
+            android:exported="false">
+        </activity>
         <activity
             android:name=".authTests"
             android:exported="false" />

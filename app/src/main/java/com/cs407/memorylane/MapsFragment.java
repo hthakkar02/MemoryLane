@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -71,17 +72,24 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     }
 
     public boolean onMarkerClick(Marker marker) {
-        // Replace with the desired fragment
-        Fragment newFragment = new SlideshowInfoFragment(); // Replace with your target fragment
 
-        // Perform the fragment transaction
-        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, newFragment); // Replace 'your_fragment_container' with your actual container ID
-        transaction.addToBackStack(null); // Add this transaction to the back stack (optional)
-        transaction.commit();
+    Intent intent = new Intent(getActivity(), ImageSlideshowActivity.class);
 
-        return true; // Return true to indicate that we have handled this event
+    startActivity(intent);
+
+    return true;
     }
+//        // Replace with the desired fragment
+//        Fragment newFragment = new SlideshowInfoFragment(); // Replace with your target fragment
+//
+//        // Perform the fragment transaction
+//        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+//        transaction.replace(R.id.fragment_container, newFragment); // Replace 'your_fragment_container' with your actual container ID
+//        transaction.addToBackStack(null); // Add this transaction to the back stack (optional)
+//        transaction.commit();
+//
+//        return true; // Return true to indicate that we have handled this event
+//    }
 
     private void getDeviceLocation() {
         try {
