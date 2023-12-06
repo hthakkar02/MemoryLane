@@ -15,6 +15,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -32,6 +34,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
+
+    private FrameLayout appGuideOverlay;
     private final LatLng defaultLocation = new LatLng(-33.8523341, 151.2106085);
     private final float DEFAULT_ZOOM = 15;
 
@@ -54,7 +58,31 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
             mapFragment.getMapAsync(this);
         }
 
+        appGuideOverlay = rootView.findViewById(R.id.appGuideOverlay);
+
+        ImageButton btnAppGuide = rootView.findViewById(R.id.btnAppGuide);
+        btnAppGuide.setOnClickListener(v -> toggleAppGuideOverlay());
+
+        ImageButton btnUserProfile = rootView.findViewById(R.id.btnUserProfile);
+        btnUserProfile.setOnClickListener(v -> navigateToUserProfile());
+
         return rootView;
+    }
+
+    private void toggleAppGuideOverlay() {
+        if (appGuideOverlay.getVisibility() == View.GONE) {
+            appGuideOverlay.setVisibility(View.VISIBLE);
+        } else {
+            appGuideOverlay.setVisibility(View.GONE);
+        }
+    }
+
+    private void navigateToUserProfile() {
+        Fragment userProfileFragment = new UserProfileFragment(); // Assuming you have created this
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, userProfileFragment); // Replace with your container ID
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     @Override
@@ -139,5 +167,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
             Log.e("Exception: %s", e.getMessage(), e);
         }
     }
+
 
 }

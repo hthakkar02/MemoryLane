@@ -8,4 +8,10 @@
     <string name="title_search">Search</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string-array name="upload_types_array">
+        <item>Global</item>
+        <item>Friends Only</item>
+        <item>Private</item>
+    </string-array>
 </resources>

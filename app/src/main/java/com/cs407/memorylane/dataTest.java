@@ -9,6 +9,7 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
@@ -161,14 +162,18 @@ public class dataTest extends AppCompatActivity {
                         String downloadUrl = uri.toString();
                         Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
                         addPhotoToCollection(context, "images/" + destinationFileName, fileUri);
-                        // Use the URL as needed
+                        // Toast message for successful upload
+                        Toast.makeText(context, "Upload successful!", Toast.LENGTH_SHORT).show();
                     });
                 })
                 .addOnFailureListener(exception -> {
                     // Handle unsuccessful upload
                     Log.e("FirebaseUpload", "Upload failed: " + exception.getMessage());
+                    // Toast message for failed upload
+                    Toast.makeText(context, "Upload failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 
 
 

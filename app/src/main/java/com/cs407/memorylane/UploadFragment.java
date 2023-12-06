@@ -21,8 +21,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,6 +38,9 @@ public class UploadFragment extends Fragment {
 
     private static final int PICK_IMAGE_REQUEST = 1;
     private ImageView selectedImage;
+
+    private LinearLayout topBar;
+
 
     public UploadFragment() {
         // Required empty public constructor
@@ -49,29 +55,43 @@ public class UploadFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
 
-        checkPermissionsAndLoadImages();
 
-        adapter.setOnImageSelectedListener(uri -> {
-            Log.d("Location Hopefully", "This shit works");
-            InputStream inputStream = null; // 'uri' is the Uri of your image
-            try {
-                inputStream = getContext().getContentResolver().openInputStream(uri);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            if (inputStream != null) {
-                ExifInterface exifInterface = null;
+        topBar = view.findViewById(R.id.top_bar);
+
+        if (checkPermissionsAndLoadImages()) {
+
+            adapter.setOnImageSelectedListener(uri -> {
+                InputStream inputStream = null;
                 try {
-                    exifInterface = new ExifInterface(inputStream);
-                } catch (IOException e) {
+                    inputStream = getContext().getContentResolver().openInputStream(uri);
+                } catch (FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
-                float[] latLong = new float[2];
-                boolean hasLatLong = exifInterface.getLatLong(latLong);
-                Log.d("HenryLocation", "" + latLong[0]);
-                Log.d("HENRYBOOLEAN", "" + hasLatLong);
-            }
-        });
+                if (inputStream != null) {
+                    ExifInterface exifInterface = null;
+                    try {
+                        exifInterface = new ExifInterface(inputStream);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    float[] latLong = new float[2];
+                    boolean hasLatLong = exifInterface.getLatLong(latLong);
+                }
+            });
+
+            adapter.setOnItemSelectedListener(isAnyItemSelected -> {
+                topBar.setVisibility(isAnyItemSelected ? View.VISIBLE : View.GONE);
+            });
+        }
+
+        Spinner uploadTypeSpinner = view.findViewById(R.id.upload_type_spinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
+                R.array.upload_types_array, android.R.layout.simple_spinner_item); // Define this array in your resources
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        uploadTypeSpinner.setAdapter(adapter);
+
+        // Initialize the bottom bar
+        LinearLayout bottomBar = view.findViewById(R.id.top_bar);
 
         // Assuming you have a button to trigger upload
         Button uploadButton = view.findViewById(R.id.upload_button);
@@ -157,12 +177,13 @@ public class UploadFragment extends Fragment {
     }
 
     private static final int PERMISSIONS_REQUEST_READ_MEDIA_IMAGES = 1;
-    private void checkPermissionsAndLoadImages() {
+    private boolean checkPermissionsAndLoadImages() {
         boolean hasReadMediaImagesPermission = ContextCompat.checkSelfPermission(getContext(), "android.permission.READ_MEDIA_IMAGES") == PackageManager.PERMISSION_GRANTED;
         boolean hasAccessMediaLocationPermission = ContextCompat.checkSelfPermission(getContext(), "android.permission.ACCESS_MEDIA_LOCATION") == PackageManager.PERMISSION_GRANTED;
 
         if (hasReadMediaImagesPermission && hasAccessMediaLocationPermission) {
             loadImages();
+            return true;
         } else {
             List<String> permissionsToRequest = new ArrayList<>();
             if (!hasReadMediaImagesPermission) {
@@ -173,6 +194,7 @@ public class UploadFragment extends Fragment {
             }
             requestPermissions(permissionsToRequest.toArray(new String[0]), PERMISSIONS_REQUEST_READ_MEDIA_IMAGES);
         }
+        return false;
     }
 
     @Override
