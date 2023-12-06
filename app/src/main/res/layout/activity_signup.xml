@@ -130,7 +130,8 @@
             android:text="Log in"
             android:textColor="#2196F3"
             app:cornerRadius="5dp"
-            app:strokeColor="#03A9F4" />
+            app:strokeColor="#03A9F4"
+            app:strokeWidth="1dp"/>
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

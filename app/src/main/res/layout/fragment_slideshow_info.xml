@@ -11,35 +11,48 @@
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_gravity="bottom"
-        android:background="#D3D3D3" >
+        android:background="#AA000000" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@android:color/transparent"
+            android:orientation="vertical"
+            android:padding="16dp">
 
         <ImageButton
             android:id="@+id/menu_down_button"
-            android:layout_width="51dp"
-            android:layout_height="40dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_gravity="center_horizontal|top"
-            android:src="@mipmap/menu_down_button" />
+            android:src="@drawable/ic_arrow_down"
+            android:background="@android:color/transparent"
+            android:scaleType="centerCrop"/>
 
         <TextView
             android:id="@+id/area"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="60dp"
+            android:layout_marginTop="15dp"
             android:fontFamily="monospace"
             android:text="Mifflin West"
             android:textSize="34sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"/>
 
         <TextView
             android:id="@+id/date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
             android:layout_below="@id/area"
             android:layout_marginLeft="10dp"
             android:layout_marginTop="4dp"
             android:textSize="17dp"
-            android:text="May 28, 2021" />
+            android:text="May 28, 2021"
+            android:textColor="#FFFFFF"/>
 
         <TextView
             android:id="@+id/address"
@@ -47,7 +60,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:textSize="20dp"
-            android:text="Address" />
+            android:text="Address"
+            android:textColor="#FFFFFF"/>
 
         <TextView
             android:id="@+id/user"
@@ -56,8 +70,10 @@
             android:layout_gravity="center|bottom"
             android:layout_marginBottom="20dp"
             android:textSize="20dp"
-            android:text="username" />
+            android:text="username"
+            android:textColor="#FFFFFF"/>
         <!-- How to layer the text one after the other?-->
+        </LinearLayout>
 
     </FrameLayout>
     

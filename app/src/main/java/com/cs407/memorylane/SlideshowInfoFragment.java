@@ -1,5 +1,6 @@
 package com.cs407.memorylane;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -11,6 +12,29 @@ import android.widget.Button;
 import android.widget.ImageButton;
 
 public class SlideshowInfoFragment extends Fragment {
+
+    public interface OnFragmentInteractionListener {
+        void onFragmentClosed();
+    }
+
+    private OnFragmentInteractionListener mListener;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentInteractionListener) {
+            mListener = (OnFragmentInteractionListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mListener = null;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -25,6 +49,11 @@ public class SlideshowInfoFragment extends Fragment {
                 getActivity().getSupportFragmentManager().beginTransaction()
                         .remove(SlideshowInfoFragment.this)
                         .commit();
+
+                // Notify the activity
+                if (mListener != null) {
+                    mListener.onFragmentClosed();
+                }
             }
         });
 

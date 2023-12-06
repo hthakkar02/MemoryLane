@@ -11,7 +11,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
-public class ImageSlideshowActivity extends AppCompatActivity {
+public class ImageSlideshowActivity extends AppCompatActivity implements SlideshowInfoFragment.OnFragmentInteractionListener {
 
     private ViewPager viewPager;
     private SlideshowPagerAdapter pagerAdapter;
@@ -69,6 +69,7 @@ public class ImageSlideshowActivity extends AppCompatActivity {
         menuButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                menuButton.setVisibility(View.INVISIBLE);
                 // Handle menu button click by starting the MenuFragment
                 SlideshowInfoFragment menuFragment = new SlideshowInfoFragment();
                 getSupportFragmentManager().beginTransaction()
@@ -80,6 +81,15 @@ public class ImageSlideshowActivity extends AppCompatActivity {
         // You can also programmatically update the image counter
         updateImageCounter(0); // Update the image counter text as needed
     }
+
+    @Override
+    public void onFragmentClosed() {
+        ImageButton menuButton = findViewById(R.id.menu_up_button);
+        if (menuButton != null) {
+            menuButton.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void updateImageCounter(int position) {
         // Update the image counter text based on the current position
         TextView imageCounter = findViewById(R.id.photo_count);
