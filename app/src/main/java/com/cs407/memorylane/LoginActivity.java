@@ -41,7 +41,7 @@ public class LoginActivity extends AppCompatActivity {
                 // Get user input
                 TextView emailTextView = findViewById(R.id.emailInput);
                 TextView passwordTextView = findViewById(R.id.passwordInput);
-                String email = emailTextView.getText().toString();
+                String email = emailTextView.getText().toString().toLowerCase();
                 String password = passwordTextView.getText().toString();
 
                 // Do login

@@ -67,7 +67,7 @@ public class SignupActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(SignupActivity.this, homeActivity.class);
 
-                String email = emailTextView.getText().toString();
+                String email = emailTextView.getText().toString().toLowerCase();
                 String password = passwordTextView.getText().toString();
                 String username = usernameTextView.getText().toString();
 
