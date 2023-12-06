@@ -1,5 +1,5 @@
 package com.cs407.memorylane;
-import com.squareup.picasso.Picasso;
+//import com.squareup.picasso.Picasso;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -35,7 +35,7 @@ public class SlideshowPagerAdapter extends PagerAdapter {
         ImageView imageView = view.findViewById(R.id.imageView);
 
         // Load and display the photo using Picasso (replace with your image loading library)
-        Picasso.get().load(photoUrls[position]).into(imageView);
+        //Picasso.get().load(photoUrls[position]).into(imageView);
 
         container.addView(view);
         return view;

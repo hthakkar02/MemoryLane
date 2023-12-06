@@ -33,10 +33,13 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 
+import org.w3c.dom.Document;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -152,7 +155,7 @@ public class dataTest extends AppCompatActivity {
     /**
      * Tested with loadImageReferenceFromUser("/User Data/user000001");
      *
-     * @param owner is the unique identifier for the user in the All Users collection
+     * @ owner is the unique identifier for the user in the All Users collection
      */
     protected void loadImagesFromUser(Context context) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -233,6 +236,54 @@ public class dataTest extends AppCompatActivity {
         editor.putString("userID", userId);
         editor.apply();
     }
+
+
+    /**
+     * Method to retrieve the information for one person via their userID
+     *
+     * @returns an arraylist as follows: [username, memories made]
+     */
+    protected void retrieveUserInfo(String userID, UserInfoCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        CollectionReference userDataCollection = db.collection("User Data");
+        Query userQuery = userDataCollection.whereEqualTo("userID", userID);
+
+        userQuery.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                ArrayList<String> daInfo = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String username = document.getString("username");
+                    daInfo.add(username);
+                }
+
+                DocumentReference ownerRef = db.collection("User Data").document(userID);
+
+                db.collection("All Photos")
+                        .whereEqualTo("Owner", ownerRef)
+                        .get()
+                        .addOnCompleteListener(photoTask -> {
+                            if (photoTask.isSuccessful()) {
+                                int totalMemories = photoTask.getResult().size();
+                                daInfo.add(String.valueOf(totalMemories));
+                                callback.onUserInfoRetrieved(daInfo);
+                            } else {
+                                Log.e("Firestore", "Error getting photos: ", photoTask.getException());
+                            }
+                        });
+
+            } else {
+                Log.e("Firestore", "Error getting user data: ", task.getException());
+            }
+        });
+    }
+
+    interface UserInfoCallback {
+        void onUserInfoRetrieved(ArrayList<String> daInfo);
+    }
+
+
+
 
     /**
      *
