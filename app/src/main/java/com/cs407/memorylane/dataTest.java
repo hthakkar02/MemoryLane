@@ -4,20 +4,33 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.AssetManager;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.util.LruCache;
 import android.widget.Toast;
 
+
+import com.google.android.gms.tasks.Tasks;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
@@ -38,17 +51,117 @@ public class dataTest extends AppCompatActivity {
 
     }
 
+    // Example LruCache initialization in your activity or fragment
+    int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+    int cacheSize = maxMemory / 8;
+    LruCache<String, Bitmap> imageCache = new LruCache<>(cacheSize);
+
+    // Function to add image to cache
+    protected void addBitmapToCache(String key, Bitmap bitmap) {
+        if (getBitmapFromCache(key) == null) {
+            imageCache.put(key, bitmap);
+        }
+    }
+
+    // Function to retrieve image from cache
+    protected Bitmap getBitmapFromCache(String key) {
+        return imageCache.get(key);
+    }
+
+
+    // Function to download an image from Firebase Storage
+    protected void downloadImage(String imagePath) {
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+        StorageReference imageRef = storageRef.child(imagePath);
+
+        // Download image into a Bitmap
+        imageRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(bytes -> {
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+            // Cache the image
+            addBitmapToCache(imagePath, bitmap);
+
+            Log.d("ImageCache", "Image cached successfully");
+        }).addOnFailureListener(exception -> {
+            // Handle errors
+            exception.printStackTrace();
+        });
+
+    }
+
+    public void searchUsername(String searchString) {
+        // Access Firestore instance
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Reference to the "User Data" collection
+        CollectionReference userDataCollection = db.collection("User Data");
+
+        // Perform the search
+        userDataCollection.whereEqualTo("Username", searchString)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("USERNAME SEARCH", "Getting to inside of search");
+                        // Handle the search results
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // Access the document data
+                            String username = document.getString("Username");
+
+                            // Check if the username contains the search string
+                            if (username != null && username.contains(searchString)) {
+                                // Log the found username
+                                Log.d("USERNAME SEARCH", "Found username: " + username);
+                            }
+                        }
+                    } else {
+                        // Handle errors
+                        Log.e("USERNAME SEARCH", "Error searching for username: " + task.getException().getMessage());
+                    }
+                });
+    }
+
+
+
+//    protected List<String> searchUserByUsernameSubstring(String substring) {
+//        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//        CollectionReference userDataCollection = db.collection("User Data");
+//
+//        try {
+//            QuerySnapshot querySnapshot = Tasks.await(
+//                    userDataCollection.whereArrayContains("Username", substring).get()
+//            );
+//
+//            List<String> matchingUsernames = new ArrayList<>();
+//
+//            for (QueryDocumentSnapshot document : querySnapshot) {
+//                // Assuming "Username" is the field in your document
+//                String foundUsername = document.getString("Username");
+//                if (foundUsername != null) {
+//                    Log.d("USERNAME FOUND", "Here is the username that matched: "+foundUsername);
+//                    matchingUsernames.add(foundUsername);
+//                }
+//            }
+//
+//            return matchingUsernames;
+//        } catch (Exception e) {
+//            // Handle exceptions here
+//            return new ArrayList<>();
+//        }
+//    }
+
     /**
      * Tested with loadImageReferenceFromUser("/User Data/user000001");
      *
      * @param owner is the unique identifier for the user in the All Users collection
      */
-    protected void loadImageReferenceFromUser(String owner) {
+    protected void loadImagesFromUser(Context context) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference ownerRef = db.document(owner); // Create a reference to the owner document
+        String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
+        DocumentReference ownerRef = db.collection("User Data").document(owner); // Create a reference to the owner document
 
         Log.d("STATUS", "Getting here");
 
+        List<String> imagePaths = new ArrayList<>(); // List to store image paths
 
         db.collection("All Photos")
                 .whereEqualTo("Owner", ownerRef)
@@ -57,14 +170,21 @@ public class dataTest extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             String path = document.getString("Path");
-                            // Retrieve the path to the image in Firebase Storage and display it in your app
+                            // Retrieve the path to the image in Firebase Storage and add it to the list
                             Log.d("PhotoData", "This is the path: " + path);
+                            imagePaths.add(path);
+                        }
+
+                        // Now, you can use the imagePaths list directly
+                        for (String imagePath : imagePaths) {
+                            downloadImage(imagePath);
                         }
                     } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
                     }
                 });
     }
+
 
 
 
@@ -191,8 +311,6 @@ public class dataTest extends AppCompatActivity {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];
                 boolean hasLatLong = exifInterface.getLatLong(latLong);
-                Log.d("HenryLocation", ""+latLong[0]);
-                Log.d("HENRYBOOLEAN", ""+hasLatLong);
                 if (hasLatLong) {
                     float latitude = latLong[0];
                     float longitude = latLong[1];
