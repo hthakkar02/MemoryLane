@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.Query;
@@ -95,36 +96,30 @@ public class dataTest extends AppCompatActivity {
 
     }
 
-    public void searchUsername(String searchString) {
-        // Access Firestore instance
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+    public interface UsernameSearchCallback {
+        void onSearchCompleted(List<String> usernames);
+    }
 
-        // Reference to the "User Data" collection
+    public void searchUsername(String searchString, UsernameSearchCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference userDataCollection = db.collection("User Data");
 
-        // Perform the search
-        userDataCollection.whereEqualTo("Username", searchString)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Log.d("USERNAME SEARCH", "Getting to inside of search");
-                        // Handle the search results
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Access the document data
-                            String username = document.getString("Username");
-
-                            // Check if the username contains the search string
-                            if (username != null && username.contains(searchString)) {
-                                // Log the found username
-                                Log.d("USERNAME SEARCH", "Found username: " + username);
-                            }
-                        }
-                    } else {
-                        // Handle errors
-                        Log.e("USERNAME SEARCH", "Error searching for username: " + task.getException().getMessage());
+        userDataCollection.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                List<String> foundUsernames = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String username = document.getString("Username");
+                    if (username != null && username.toLowerCase().contains(searchString.toLowerCase())) {
+                        foundUsernames.add(username);
                     }
-                });
+                }
+                callback.onSearchCompleted(foundUsernames);
+            } else {
+                Log.e("USERNAME SEARCH", "Error searching for username: ", task.getException());
+            }
+        });
     }
+
 
 
 //    protected List<String> searchUserByUsernameSubstring(String substring) {
@@ -294,12 +289,39 @@ public class dataTest extends AppCompatActivity {
         });
     }
 
+    public void sendFriendRequest(Context context, String friendUsername) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Get owner's userID from SharedPreferences
+        String ownerUserId = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).getString("userID", "User not logged in");
+        if (ownerUserId.equals("User not logged in")) {
+            Log.e("FriendRequest", "Owner user ID is not logged in or unavailable.");
+            return;
+        }
+
+        // Reference to the "User Data" collection
+        CollectionReference userDataCollection = db.collection("User Data");
+
+        // Search for the user with the given username
+        userDataCollection.whereEqualTo("Username", friendUsername).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    // Assuming 'Username' field uniquely identifies a user
+                    DocumentReference friendDocRef = document.getReference();
+
+                    // Add the current user's ID to the friend's "Friend Request" array
+                    friendDocRef.update("Friend Request", FieldValue.arrayUnion(ownerUserId))
+                            .addOnSuccessListener(aVoid -> Log.d("FriendRequest", "Friend request sent to: " + friendUsername))
+                            .addOnFailureListener(e -> Log.e("FriendRequest", "Error updating document", e));
+                }
+            } else {
+                Log.e("USERNAME SEARCH", "Error searching for username: ", task.getException());
+            }
+        });
+    }
     interface UserInfoCallback {
         void onUserInfoRetrieved(ArrayList<String> daInfo);
     }
-
-
-
 
     /**
      *
