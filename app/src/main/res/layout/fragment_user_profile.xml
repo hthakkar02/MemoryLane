@@ -15,15 +15,6 @@ android:layout_height="match_parent">
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         android:textSize="34sp" />
 
-<!-- Real Name -->
-    <TextView
-        android:id="@+id/tvRealName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tvUserName"
-        android:layout_centerHorizontal="true"
-        android:text="Name"
-        android:textSize="16sp" />
 
 <!-- Divider-->
     <View
@@ -32,27 +23,18 @@ android:layout_height="match_parent">
         android:layout_marginTop="50dp"
         android:layout_height="2.5dp"
         android:layout_centerHorizontal="true"
-        android:layout_below="@id/tvRealName"
+        android:layout_below="@id/tvUserName"
         android:background="@color/black" />
 
 <!-- Profile Image -->
-    <ImageView
-        android:id="@+id/ivProfile"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_below="@id/divider"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:src="@android:drawable/ic_menu_gallery"
-        app:srcCompat="@mipmap/user_temp_icon" />
 
-<!-- Memories Made -->
+    <!-- Memories Made -->
 <TextView
     android:id="@+id/tvMemoriesMade"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="Memories Made: #"
-    android:layout_below="@id/ivProfile"
+    android:layout_below="@id/divider"
     android:layout_centerHorizontal="true"
     android:layout_marginTop="16dp"/>
 
