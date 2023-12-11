@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class dataTest extends AppCompatActivity {
 
@@ -153,25 +154,26 @@ public class dataTest extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
         DocumentReference ownerRef = db.collection("User Data").document(owner);
-        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        Map<String, GeoPoint> imageLocations = new HashMap<>();
         imageGroups.clear();
 
-        // Step 1: Retrieve the list of friends from the owner document
         ownerRef.get().addOnSuccessListener(documentSnapshot -> {
             if (documentSnapshot.exists()) {
-                List<String> friendList = (List<String>) documentSnapshot.get("Friends"); // replace "friends" with the actual field name for the friends list
+                List<String> friendList = (List<String>) documentSnapshot.get("Friends"); // replace "Friends" with the actual field name
                 if (friendList != null && !friendList.isEmpty()) {
-                    // Step 2: Modify the query to download photos only owned by friends with PrivacyLevel set to Friends
+                    List<DocumentReference> friendRefs = friendList.stream()
+                            .map(friendId -> db.collection("User Data").document(friendId))
+                            .collect(Collectors.toList());
                     db.collection("All Photos")
-                            .whereIn("Owner", friendList)
-                            .whereEqualTo("PrivacyLevel", "Friends") // replace "PrivacyLevel" with the actual field name for privacy level
+                            .whereIn("Owner", friendRefs)
+                            .whereEqualTo("PrivacyLevel", "Friends Only")
                             .get()
                             .addOnCompleteListener(task -> {
                                 if (task.isSuccessful() && task.getResult() != null) {
                                     List<DocumentSnapshot> documents = task.getResult().getDocuments();
-                                    int totalImages = documents.size();
-                                    if (totalImages == 0) {
+                                    if (documents.size() == 0) {
                                         listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                                        return;
                                     }
 
                                     AtomicInteger completedDownloads = new AtomicInteger(0);
@@ -180,53 +182,51 @@ public class dataTest extends AppCompatActivity {
                                         GeoPoint location = document.getGeoPoint("Location");
 
                                         if (location != null) {
-                                            // Sort the image into the proper group based on location
-                                            imageLocations.put(path, location);
+                                            imageLocations.put(path, location); // Store image location
                                             String groupKey = findGroupKeyForLocation(location, geoBounds);
                                             imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
                                         }
 
                                         downloadImage(path, key -> {
                                             imageDownloadedCallback.onImageDownloaded(key);
-                                            if (completedDownloads.incrementAndGet() == totalImages) {
+                                            if (completedDownloads.incrementAndGet() == documents.size()) {
                                                 // All images have been downloaded and cached
                                                 listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                                Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                                listener.onCentroidsCalculated(centroids);
                                             }
                                         });
                                     }
-
-                                    // Calculate centroids here after all images are loaded
-                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
-                                    listener.onCentroidsCalculated(centroids);
-
-                                    Log.d("Important Images:", "" + imageGroups.toString());
                                 } else {
                                     Log.d("ERRORING", "Error getting documents: ", task.getException());
                                 }
                             });
                 } else {
-                    // No friends to load images from
-                    listener.onImagesLoaded(new ArrayList<>());
+                    listener.onImagesLoaded(new ArrayList<>()); // No friends to load images from
                 }
+            } else {
+                listener.onImagesLoaded(new ArrayList<>()); // Owner document does not exist
             }
+        }).addOnFailureListener(e -> {
+            Log.d("ERRORING", "Error getting owner document: ", e);
         });
     }
 
-    protected void loadGlobalPhotos(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+
+    protected void loadGlobalImages(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        Map<String, GeoPoint> imageLocations = new HashMap<>();
         imageGroups.clear();
 
-        // Query to select all photos with PrivacyLevel set to "Global"
         db.collection("All Photos")
-                .whereEqualTo("PrivacyLevel", "Global") // replace "PrivacyLevel" with the actual field name for privacy level
+                .whereEqualTo("PrivacyLevel", "Global")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
                         List<DocumentSnapshot> documents = task.getResult().getDocuments();
-                        int totalImages = documents.size();
-                        if (totalImages == 0) {
+                        if (documents.size() == 0) {
                             listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                            return;
                         }
 
                         AtomicInteger completedDownloads = new AtomicInteger(0);
@@ -235,25 +235,21 @@ public class dataTest extends AppCompatActivity {
                             GeoPoint location = document.getGeoPoint("Location");
 
                             if (location != null) {
-                                // You can still sort images into groups based on location if needed
+                                imageLocations.put(path, location); // Store image location
                                 String groupKey = findGroupKeyForLocation(location, geoBounds);
                                 imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
                             }
 
                             downloadImage(path, key -> {
                                 imageDownloadedCallback.onImageDownloaded(key);
-                                if (completedDownloads.incrementAndGet() == totalImages) {
-                                    // All images have been downloaded and cached
+                                if (completedDownloads.incrementAndGet() == documents.size()) {
+                                    // Call listeners after all images are processed
                                     listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                    listener.onCentroidsCalculated(centroids);
                                 }
                             });
                         }
-
-                        // If needed, calculate centroids here after all images are loaded
-                        Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
-                        listener.onCentroidsCalculated(centroids);
-
-                        Log.d("Important Images:", "" + imageGroups.toString());
                     } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
                     }
@@ -310,7 +306,7 @@ public class dataTest extends AppCompatActivity {
                                     listener.onCentroidsCalculated(centroids);
 
 
-                                Log.d("Important Images:", ""+imageGroups.toString());
+//                                Log.d("Important Images:", ""+imageGroups.toString());
                             } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
                     }
