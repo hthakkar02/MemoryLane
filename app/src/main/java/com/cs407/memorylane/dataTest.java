@@ -43,6 +43,56 @@ public class dataTest extends AppCompatActivity {
 
     }
 
+
+    /**
+     * This method rejects a friend request by removing the friend from the friend requests array.
+     *
+     * @param userID users user ID
+     * @param friendUserID friends user ID
+     */
+    protected void rejectFriendRequest(String userID, String friendUserID){
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        DocumentReference userDocument = db.collection("User Data").document(userID);
+
+        // Update the array field "Friend" by removing the specified friendUserID
+        userDocument.update("Friend Requests", FieldValue.arrayRemove(friendUserID))
+                .addOnSuccessListener(aVoid -> {
+                    // Deletion successful
+                    Log.d("Delete Friend Succ", "Deleted friend request successfully");
+                })
+                .addOnFailureListener(e -> {
+                    // Deletion failed
+                    Log.e("Delete Friend Fail", "Error deleting friend request: " + e.getMessage());
+                });
+    }
+
+
+    /**
+     * This method deletes ur friend.
+     * Invoke when you are deleting a friend from your Friends.
+     * @param userID users user ID
+     * @param friendUserID friends user ID
+     */
+    protected void deleteFriend(String userID, String friendUserID) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        DocumentReference userDocument = db.collection("User Data").document(userID);
+
+        // Update the array field "Friend" by removing the specified friendUserID
+        userDocument.update("Friends", FieldValue.arrayRemove(friendUserID))
+                .addOnSuccessListener(aVoid -> {
+                    // Deletion successful
+                    Log.d("Delete Friend Succ", "Friend deleted successfully");
+                })
+                .addOnFailureListener(e -> {
+                    // Deletion failed
+                    Log.e("Delete Friend Fail", "Error deleting friend: " + e.getMessage());
+                });
+    }
+
+
+
     /**
      * This method handles friend requests being submitted.
      * 1) Removes the friends userID from friend requests
