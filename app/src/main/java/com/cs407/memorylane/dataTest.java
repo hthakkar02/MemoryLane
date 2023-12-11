@@ -43,6 +43,38 @@ public class dataTest extends AppCompatActivity {
 
     }
 
+    /**
+     * This method handles friend requests being submitted.
+     * 1) Removes the friends userID from friend requests
+     * 2) Adds the friends userID in the Friends field
+     * 3) Does the vice versa of (2) for the friend
+     *
+     * @param userID is the userID of the current user
+     * @param friendsUserID is the userID of the user who's request was accepted
+     */
+    protected void onFriendRequestAccepted(String userID, String friendsUserID) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference userDataCollection = db.collection("User Data");
+
+        // Remove friendsUserID from "Friend Request" field of userID document
+        DocumentReference userDocument = userDataCollection.document(userID);
+        userDocument.update("Friend Request", FieldValue.arrayRemove(friendsUserID))
+                .addOnSuccessListener(aVoid -> {
+                    // Add friendsUserID to "Friends" field of userID document
+                    userDocument.update("Friends", FieldValue.arrayUnion(friendsUserID))
+                            .addOnSuccessListener(aVoid1 -> {
+                                // Add userID to "Friends" field of friendsUserID document
+                                DocumentReference friendsUserDocument = userDataCollection.document(friendsUserID);
+                                friendsUserDocument.update("Friends", FieldValue.arrayUnion(userID))
+                                        .addOnSuccessListener(aVoid2 -> Log.d("Friend Request", "Friend request accepted successfully"))
+                                        .addOnFailureListener(e -> Log.e("Friend Request", "Failed to add userID to friendsUserID's Friends: " + e.getMessage()));
+                            })
+                            .addOnFailureListener(e -> Log.e("Friend Request", "Failed to add friendsUserID to userID's Friends: " + e.getMessage()));
+                })
+                .addOnFailureListener(e -> Log.e("Friend Request", "Failed to remove friendsUserID from userID's Friend Request: " + e.getMessage()));
+    }
+
+
 
     /**
      * This method retrieves the friends list associated with a userID. Uses a callback for async operation

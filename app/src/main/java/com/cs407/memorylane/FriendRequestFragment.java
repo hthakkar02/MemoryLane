@@ -36,6 +36,26 @@ public class FriendRequestFragment extends Fragment {
             transaction.commit();
         });
 
+
+        handleFriendRequestAcceptance();
+
+
         return view;
+    }
+
+
+
+
+
+
+    protected void handleFriendRequestAcceptance(){
+
+        // Assume userID and friendsUserID are obtained or set somehow
+        String userID = "UXnCetghE7VaSs1ZLzmI";
+        String friendsUserID = "ADsMGJPvOJdyzLQJdz0X";
+
+        dataTest dataTest = new dataTest();
+        dataTest.onFriendRequestAccepted(userID, friendsUserID);
+
     }
 }
