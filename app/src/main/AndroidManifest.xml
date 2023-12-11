@@ -42,9 +42,6 @@
             android:value="AIzaSyChFA-QPEaSfmwg1WI0UwYknFwMM6ymqsU" />
 
         <activity
-            android:name=".CustomFriendList"
-            android:exported="false" />
-        <activity
             android:name=".homeActivity"
             android:exported="false" />
         <activity

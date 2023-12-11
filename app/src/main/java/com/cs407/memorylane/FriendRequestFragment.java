@@ -9,10 +9,15 @@ import android.widget.ImageButton;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
 public class FriendRequestFragment extends Fragment {
+
+    private RecyclerView recyclerView;
+    private FriendRequestAdapter adapter;
 
     public FriendRequestFragment() {
     }
@@ -43,8 +48,31 @@ public class FriendRequestFragment extends Fragment {
         fetchFriendRequestsForUser("ADsMGJPvOJdyzLQJdz0X");
 
 
-        handleFriendRequestAcceptance();
+        //handleFriendRequestAcceptance();
 
+
+        recyclerView = view.findViewById(R.id.friend_request_list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        adapter = new FriendRequestAdapter(new ArrayList<>(), new FriendRequestAdapter.OnItemClickListener() {
+            @Override
+            public void onAcceptClick(int position) {
+                // Handle accept button click for the friend request at the specified position
+                // You can update your data and UI accordingly
+            }
+
+            @Override
+            public void onDeclineClick(int position) {
+                // Handle decline button click for the friend request at the specified position
+                // You can update your data and UI accordingly
+            }
+        });
+
+        // Set the adapter to the RecyclerView
+        recyclerView.setAdapter(adapter);
+
+        // Fetch friend requests for the user
+        fetchFriendRequestsForUser("ADsMGJPvOJdyzLQJdz0X");
 
         return view;
     }
@@ -61,6 +89,9 @@ public class FriendRequestFragment extends Fragment {
                     // Process each friend request as needed
                     Log.d("Friend Request: ", request);
                 }
+
+                adapter.updateData(friendRequests);
+
             }
 
             @Override
