@@ -416,12 +416,6 @@ public class CameraFragment extends Fragment {
                     super.onCaptureCompleted(session, request, result);
                     Toast.makeText(getActivity(), "Image Saved", Toast.LENGTH_SHORT).show();
                     createCameraPreview();
-
-                    // Now upload the image to Firebase
-                    if (fileUri != null) {
-                        dataTest dT = dataTest.getInstance();
-                        dT.uploadLocalPhoto(getContext(), fileUri);
-                    }
                 }
             };
 

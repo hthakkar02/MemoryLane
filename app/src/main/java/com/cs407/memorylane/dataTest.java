@@ -408,7 +408,7 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void uploadLocalPhoto(Context context, Uri fileUri) {
+    protected void uploadLocalPhoto(Context context, Uri fileUri, String privacyLevel) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
@@ -421,7 +421,7 @@ public class dataTest extends AppCompatActivity {
                     imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                         String downloadUrl = uri.toString();
                         Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
-                        addPhotoToCollection(context, "images/" + destinationFileName, fileUri);
+                        addPhotoToCollection(context, "images/" + destinationFileName, fileUri, privacyLevel);
                         // Toast message for successful upload
                         Toast.makeText(context, "Upload successful!", Toast.LENGTH_SHORT).show();
                     });
@@ -439,7 +439,7 @@ public class dataTest extends AppCompatActivity {
      * @param referencePath
      * @param fileUri
      */
-    protected void addPhotoToCollection(Context context, String referencePath, Uri fileUri) {
+    protected void addPhotoToCollection(Context context, String referencePath, Uri fileUri, String privacyLevel) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
@@ -471,6 +471,7 @@ public class dataTest extends AppCompatActivity {
         newPhoto.put("Location", location);
         newPhoto.put("Owner", db.collection("User Data").document(context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in")));
         newPhoto.put("Path", referencePath);
+        newPhoto.put("PrivacyLevel", privacyLevel);
 
         collectionReference.add(newPhoto)
                 .addOnSuccessListener(documentReference -> {

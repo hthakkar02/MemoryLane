@@ -49,6 +49,7 @@ public class UploadFragment extends Fragment {
     private RecyclerView recyclerView;
     private ImageGridAdapter adapter;
 
+    private Spinner uploadSpinner;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_upload, container, false);
@@ -84,11 +85,11 @@ public class UploadFragment extends Fragment {
             });
         }
 
-        Spinner uploadTypeSpinner = view.findViewById(R.id.upload_type_spinner);
+        uploadSpinner = view.findViewById(R.id.upload_type_spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
                 R.array.upload_types_array, android.R.layout.simple_spinner_item); // Define this array in your resources
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        uploadTypeSpinner.setAdapter(adapter);
+        uploadSpinner.setAdapter(adapter);
 
         // Initialize the bottom bar
         LinearLayout bottomBar = view.findViewById(R.id.top_bar);
@@ -104,7 +105,7 @@ public class UploadFragment extends Fragment {
         List<Uri> selectedUris = adapter.getSelectedUris();
         for (Uri uri : selectedUris) {
             dataTest dT = dataTest.getInstance();
-            dT.uploadLocalPhoto(getContext(), uri);
+            dT.uploadLocalPhoto(getContext(), uri, uploadSpinner.getSelectedItem().toString());
         }
     }
 
