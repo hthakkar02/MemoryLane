@@ -5,8 +5,10 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -14,6 +16,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -22,17 +26,26 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public class MapsFragment extends Fragment implements OnMapReadyCallback {
+
+public class MapsFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
+
+    private FrameLayout appGuideOverlay;
     private final LatLng defaultLocation = new LatLng(-33.8523341, 151.2106085);
     private final float DEFAULT_ZOOM = 15;
 
+    private double geoBounds[] = new double[4];
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,7 +65,31 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             mapFragment.getMapAsync(this);
         }
 
+        appGuideOverlay = rootView.findViewById(R.id.appGuideOverlay);
+
+        ImageButton btnAppGuide = rootView.findViewById(R.id.btnAppGuide);
+        btnAppGuide.setOnClickListener(v -> toggleAppGuideOverlay());
+
+        ImageButton btnUserProfile = rootView.findViewById(R.id.btnUserProfile);
+        btnUserProfile.setOnClickListener(v -> navigateToUserProfile());
+
         return rootView;
+    }
+
+    private void toggleAppGuideOverlay() {
+        if (appGuideOverlay.getVisibility() == View.GONE) {
+            appGuideOverlay.setVisibility(View.VISIBLE);
+        } else {
+            appGuideOverlay.setVisibility(View.GONE);
+        }
+    }
+
+    private void navigateToUserProfile() {
+        Fragment userProfileFragment = new UserProfileFragment(); // Assuming you have created this
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, userProfileFragment); // Replace with your container ID
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     @Override
@@ -63,7 +100,86 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
+
+        dataTest dT = dataTest.getInstance();
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                mMap.clear();
+                // Log the bounds of the visible region
+                LatLngBounds visibleBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+                //Min Lat
+                geoBounds[0] = visibleBounds.southwest.latitude;
+                //Max Lat
+                geoBounds[1] = visibleBounds.northeast.latitude;
+                //Min Lon
+                geoBounds[2] = visibleBounds.southwest.longitude;
+                //Max Lon
+                geoBounds[3] = visibleBounds.northeast.longitude;
+
+                Log.d("MapClick", "Visible Region - MinLat: " + geoBounds[0] +
+                        ", MaxLat: " + geoBounds[1] +
+                        ", MinLong: " + geoBounds[2] +
+                        ", MaxLong: " + geoBounds[3]);
+
+                dT.loadImagesFromUser(geoBounds, getActivity(), new dataTest.OnImagesLoadedListener() {
+                    @Override
+                    public void onImagesLoaded(ArrayList<String> imagePaths) {
+                        Log.d("ArrayList", imagePaths.toString());
+                    }
+
+                    @Override
+                    public void onCentroidsCalculated(Map<String, LatLng> centroids) {
+                        for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
+                            String groupKey = entry.getKey(); // The group key
+                            LatLng centroid = entry.getValue(); // The centroid LatLng
+
+                            // Create a marker at the centroid
+                            Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
+
+                            // Set the group key as the tag of the marker
+                            marker.setTag(groupKey);
+                        }
+                    }
+                }, key -> {
+                    // Handle individual image download callback
+                });
+            }
+        });
+
+
+        mMap.setOnMarkerClickListener(marker -> {
+            Intent intent = new Intent(getActivity(), ImageSlideshowActivity.class);
+            String groupKey = (String) marker.getTag();
+            ArrayList<String> imagePathsForGroup = (ArrayList<String>) dT.getImagesForGroup(groupKey); // Get images for the group
+
+            intent.putExtra("GROUP_KEY", groupKey);
+            intent.putStringArrayListExtra("IMAGE_PATHS", imagePathsForGroup);
+            startActivity(intent);
+            return true;
+        });
+
     }
+
+    public boolean onMarkerClick(Marker marker) {
+
+    Intent intent = new Intent(getActivity(), ImageSlideshowActivity.class);
+
+    startActivity(intent);
+
+    return true;
+    }
+//        // Replace with the desired fragment
+//        Fragment newFragment = new SlideshowInfoFragment(); // Replace with your target fragment
+//
+//        // Perform the fragment transaction
+//        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+//        transaction.replace(R.id.fragment_container, newFragment); // Replace 'your_fragment_container' with your actual container ID
+//        transaction.addToBackStack(null); // Add this transaction to the back stack (optional)
+//        transaction.commit();
+//
+//        return true; // Return true to indicate that we have handled this event
+//    }
 
     private void getDeviceLocation() {
         try {
@@ -77,6 +193,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                 new LatLng(lastKnownLocation.getLatitude(),
                                         lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+
+                        LatLng currentLatLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+                        // Add a marker at the current location
                     } else {
                         Log.d("MapFragment", "Current location is null. Using defaults.");
                         mMap.moveCamera(CameraUpdateFactory
@@ -100,6 +219,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     == PackageManager.PERMISSION_GRANTED) {
                 mMap.setMyLocationEnabled(true);
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
+
+                // Enable zoom controls
+                mMap.getUiSettings().setZoomControlsEnabled(true);
+
             } else {
                 mMap.setMyLocationEnabled(false);
                 mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -111,5 +234,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             Log.e("Exception: %s", e.getMessage(), e);
         }
     }
+
 
 }

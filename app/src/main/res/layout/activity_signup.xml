@@ -46,10 +46,10 @@
             app:hintEnabled="false">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/nameInput"
+                android:id="@+id/usernameInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Name"
+                android:hint="Username"
                 android:inputType="textPersonName"
                 android:textColor="#000000"
                 android:textColorHint="#000000" />
@@ -130,7 +130,8 @@
             android:text="Log in"
             android:textColor="#2196F3"
             app:cornerRadius="5dp"
-            app:strokeColor="#03A9F4" />
+            app:strokeColor="#03A9F4"
+            app:strokeWidth="1dp"/>
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

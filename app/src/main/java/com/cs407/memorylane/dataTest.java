@@ -2,31 +2,67 @@ package com.cs407.memorylane;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.res.AssetManager;
+import android.content.Context;
+import android.content.SharedPreferences;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.util.LruCache;
+import android.widget.Toast;
 
+
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.Tasks;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
+
+import org.w3c.dom.Document;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class dataTest extends AppCompatActivity {
+
+    private static dataTest instance;
+
+    // Private constructor to prevent instantiation
+    private dataTest() {}
+
+    // Static method to get the single instance of the class
+    public static dataTest getInstance() {
+        if (instance == null) {
+            instance = new dataTest();
+        }
+        return instance;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,33 +71,292 @@ public class dataTest extends AppCompatActivity {
 
     }
 
-    /**
-     * Tested with loadImageReferenceFromUser("/User Data/user000001");
-     *
-     * @param owner is the unique identifier for the user in the All Users collection
-     */
-    protected void loadImageReferenceFromUser(String owner) {
+    // Example LruCache initialization in your activity or fragment
+    int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+    int cacheSize = maxMemory / 8;
+    LruCache<String, Bitmap> imageCache = new LruCache<>(cacheSize);
+
+    private Map<String, List<String>> imageGroups = new HashMap<>();
+
+    // Function to add image to cache
+    protected void addBitmapToCache(String key, Bitmap bitmap) {
+        if (getBitmapFromCache(key) == null) {
+            imageCache.put(key, bitmap);
+        }
+    }
+
+    public List<String> getImagesForGroup(String groupKey) {
+        return imageGroups.getOrDefault(groupKey, new ArrayList<>());
+    }
+
+    // Function to retrieve image from cache
+    protected Bitmap getBitmapFromCache(String key) {
+        return imageCache.get(key);
+    }
+
+
+    // Function to download an image from Firebase Storage
+    protected void downloadImage(String imagePath, ImageDownloadedCallback callback) {
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+        StorageReference imageRef = storageRef.child(imagePath);
+
+        // Download image into a Bitmap
+        imageRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(bytes -> {
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+            // Cache the image
+            addBitmapToCache(imagePath, bitmap);
+
+            Log.d("ImageCache", "Image cached successfully"+imagePath);
+            callback.onImageDownloaded(imagePath);
+        }).addOnFailureListener(exception -> {
+            // Handle errors
+            exception.printStackTrace();
+        });
+
+    }
+
+    public interface UsernameSearchCallback {
+        void onSearchCompleted(List<String> usernames);
+    }
+
+    public void searchUsername(String searchString, UsernameSearchCallback callback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference ownerRef = db.document(owner); // Create a reference to the owner document
+        CollectionReference userDataCollection = db.collection("User Data");
 
-        Log.d("STATUS", "Getting here");
+        userDataCollection.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                List<String> foundUsernames = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String username = document.getString("Username");
+                    if (username != null && username.toLowerCase().contains(searchString.toLowerCase())) {
+                        foundUsernames.add(username);
+                    }
+                }
+                callback.onSearchCompleted(foundUsernames);
+            } else {
+                Log.e("USERNAME SEARCH", "Error searching for username: ", task.getException());
+            }
+        });
+    }
 
+    public interface OnImagesLoadedListener {
+        void onImagesLoaded(ArrayList<String> imagePaths);
+        void onCentroidsCalculated(Map<String, LatLng> centroids);
+    }
 
+    public interface ImageDownloadedCallback {
+        void onImageDownloaded(String key);
+    }
+
+    protected void loadFriendImages(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
+        DocumentReference ownerRef = db.collection("User Data").document(owner);
+        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        imageGroups.clear();
+
+        // Step 1: Retrieve the list of friends from the owner document
+        ownerRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                List<String> friendList = (List<String>) documentSnapshot.get("Friends"); // replace "friends" with the actual field name for the friends list
+                if (friendList != null && !friendList.isEmpty()) {
+                    // Step 2: Modify the query to download photos only owned by friends with PrivacyLevel set to Friends
+                    db.collection("All Photos")
+                            .whereIn("Owner", friendList)
+                            .whereEqualTo("PrivacyLevel", "Friends") // replace "PrivacyLevel" with the actual field name for privacy level
+                            .get()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful() && task.getResult() != null) {
+                                    List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                                    int totalImages = documents.size();
+                                    if (totalImages == 0) {
+                                        listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                                    }
+
+                                    AtomicInteger completedDownloads = new AtomicInteger(0);
+                                    for (DocumentSnapshot document : documents) {
+                                        String path = document.getString("Path");
+                                        GeoPoint location = document.getGeoPoint("Location");
+
+                                        if (location != null) {
+                                            // Sort the image into the proper group based on location
+                                            imageLocations.put(path, location);
+                                            String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                            imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                                        }
+
+                                        downloadImage(path, key -> {
+                                            imageDownloadedCallback.onImageDownloaded(key);
+                                            if (completedDownloads.incrementAndGet() == totalImages) {
+                                                // All images have been downloaded and cached
+                                                listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                            }
+                                        });
+                                    }
+
+                                    // Calculate centroids here after all images are loaded
+                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                    listener.onCentroidsCalculated(centroids);
+
+                                    Log.d("Important Images:", "" + imageGroups.toString());
+                                } else {
+                                    Log.d("ERRORING", "Error getting documents: ", task.getException());
+                                }
+                            });
+                } else {
+                    // No friends to load images from
+                    listener.onImagesLoaded(new ArrayList<>());
+                }
+            }
+        });
+    }
+
+    protected void loadGlobalPhotos(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        imageGroups.clear();
+
+        // Query to select all photos with PrivacyLevel set to "Global"
         db.collection("All Photos")
-                .whereEqualTo("Owner", ownerRef)
+                .whereEqualTo("PrivacyLevel", "Global") // replace "PrivacyLevel" with the actual field name for privacy level
                 .get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String path = document.getString("Path");
-                            // Retrieve the path to the image in Firebase Storage and display it in your app
-                            Log.d("PhotoData", "This is the path: " + path);
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                        int totalImages = documents.size();
+                        if (totalImages == 0) {
+                            listener.onImagesLoaded(new ArrayList<>()); // No images to load
                         }
+
+                        AtomicInteger completedDownloads = new AtomicInteger(0);
+                        for (DocumentSnapshot document : documents) {
+                            String path = document.getString("Path");
+                            GeoPoint location = document.getGeoPoint("Location");
+
+                            if (location != null) {
+                                // You can still sort images into groups based on location if needed
+                                String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                            }
+
+                            downloadImage(path, key -> {
+                                imageDownloadedCallback.onImageDownloaded(key);
+                                if (completedDownloads.incrementAndGet() == totalImages) {
+                                    // All images have been downloaded and cached
+                                    listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                }
+                            });
+                        }
+
+                        // If needed, calculate centroids here after all images are loaded
+                        Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                        listener.onCentroidsCalculated(centroids);
+
+                        Log.d("Important Images:", "" + imageGroups.toString());
                     } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
                     }
                 });
     }
+
+
+
+    protected void loadImagesFromUser(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
+        DocumentReference ownerRef = db.collection("User Data").document(owner); // Create a reference to the owner document
+        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        imageGroups.clear();
+        // Map to store centroids of each group
+
+        Log.d("STATUS", "Getting here");
+
+        db.collection("All Photos")
+                .whereEqualTo("Owner", ownerRef)
+                .get()
+                .addOnCompleteListener(task -> {
+                            if (task.isSuccessful() && task.getResult() != null) {
+                                List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                                int totalImages = documents.size();
+                                if (totalImages == 0) {
+                                    listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                                }
+
+                                AtomicInteger completedDownloads = new AtomicInteger(0);
+                                for (DocumentSnapshot document : documents) {
+                                    String path = document.getString("Path");
+                                    GeoPoint location = document.getGeoPoint("Location");
+
+                                    if (location != null) {
+                                        // Sort the image into the proper group based on location
+                                        imageLocations.put(path, location);
+                                        String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                        imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                                    }
+
+                                    downloadImage(path, key -> {
+                                        imageDownloadedCallback.onImageDownloaded(key);
+                                        if (completedDownloads.incrementAndGet() == totalImages) {
+                                            // All images have been downloaded and cached
+                                            listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                        }
+                                    });
+                                }
+
+//                                if (completedDownloads.get() == totalImages) {
+                                    // Calculate centroids here after all images are loaded
+                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                    listener.onCentroidsCalculated(centroids);
+
+
+                                Log.d("Important Images:", ""+imageGroups.toString());
+                            } else {
+                        Log.d("ERRORING", "Error getting documents: ", task.getException());
+                    }
+                });
+    }
+
+    private Map<String, LatLng> calculateCentroids(Map<String, List<String>> imageGroups, Map<String, GeoPoint> imageLocations) {
+        Map<String, LatLng> centroids = new HashMap<>();
+
+        // Iterate through each group
+        for (Map.Entry<String, List<String>> entry : imageGroups.entrySet()) {
+            String groupKey = entry.getKey();
+            List<String> imagePaths = entry.getValue();
+
+            double totalLat = 0.0;
+            double totalLng = 0.0;
+            int count = 0;
+
+            // Calculate the sum of latitudes and longitudes for the images in the group
+            for (String path : imagePaths) {
+                GeoPoint location = imageLocations.get(path);
+                if (location != null) {
+                    totalLat += location.getLatitude();
+                    totalLng += location.getLongitude();
+                    count++;
+                }
+            }
+
+            // Calculate the centroid for the group
+            if (count > 0) {
+                LatLng centroid = new LatLng(totalLat / count, totalLng / count);
+                centroids.put(groupKey, centroid);
+            }
+        }
+
+        return centroids;
+    }
+
+
+    private String findGroupKeyForLocation(GeoPoint location, double[] geoBounds) {
+        int latIndex = (int)((location.getLatitude() - geoBounds[0]) / ((geoBounds[1] - geoBounds[0]) / 10));
+        int lngIndex = (int)((location.getLongitude() - geoBounds[2]) / ((geoBounds[3] - geoBounds[2]) / 10));
+        return "Group_" + latIndex + "_" + lngIndex;
+    }
+
+
 
     /**
      *
@@ -93,6 +388,103 @@ public class dataTest extends AppCompatActivity {
                     // Handle failure
                     Log.e("Firestore", "Error adding document", e);
                 });
+    }
+
+
+    /**
+     * Stores the userID till app terminates. userID = document name in user data collection from DB in firestore
+     *
+     * @param userId
+     */
+    protected void storeUserIDToSharedPreferences(String userId) {
+        // Saves user data to shared preferences till app terminates
+        SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("userID", userId);
+        editor.apply();
+    }
+
+
+    /**
+     * Method to retrieve the information for one person via their userID
+     *
+     * @returns an arraylist as follows: [username, memories made]
+     */
+    protected void retrieveUserInfo(String userID, UserInfoCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        CollectionReference userDataCollection = db.collection("User Data");
+        DocumentReference userDocument = userDataCollection.document(userID);
+
+        userDocument.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    // Document exists, retrieve the username
+                    String username = document.getString("Username");
+                    Log.d("Profile Info Test", "Username: " + username);
+
+                    // Retrieve ownerRef after getting username
+                    DocumentReference ownerRef = db.collection("User Data").document(userID);
+
+                    // Retrieve memories made from all photos
+                    db.collection("All Photos")
+                            .whereEqualTo("Owner", ownerRef)
+                            .get()
+                            .addOnCompleteListener(photoTask -> {
+                                if (photoTask.isSuccessful()) {
+                                    int totalMemories = photoTask.getResult().size();
+                                    ArrayList<String> daInfo = new ArrayList<>();
+                                    daInfo.add(username); // Add username to the ArrayList
+                                    daInfo.add(String.valueOf(totalMemories)); // Add totalMemories to the ArrayList
+                                    callback.onUserInfoRetrieved(daInfo);
+                                } else {
+                                    Log.e("Firestore", "Error getting photos: ", photoTask.getException());
+                                }
+                            });
+                } else {
+                    // Document does not exist
+                    Log.d("Firestore", "No such document");
+                }
+            } else {
+                // Handle errors
+                Log.e("Firestore", "Error getting user data: ", task.getException());
+            }
+        });
+    }
+
+    public void sendFriendRequest(Context context, String friendUsername) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Get owner's userID from SharedPreferences
+        String ownerUserId = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).getString("userID", "User not logged in");
+        if (ownerUserId.equals("User not logged in")) {
+            Log.e("FriendRequest", "Owner user ID is not logged in or unavailable.");
+            return;
+        }
+
+        // Reference to the "User Data" collection
+        CollectionReference userDataCollection = db.collection("User Data");
+
+        // Search for the user with the given username
+        userDataCollection.whereEqualTo("Username", friendUsername).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    // Assuming 'Username' field uniquely identifies a user
+                    DocumentReference friendDocRef = document.getReference();
+
+                    // Add the current user's ID to the friend's "Friend Request" array
+                    friendDocRef.update("Friend Request", FieldValue.arrayUnion(ownerUserId))
+                            .addOnSuccessListener(aVoid -> Log.d("FriendRequest", "Friend request sent to: " + friendUsername))
+                            .addOnFailureListener(e -> Log.e("FriendRequest", "Error updating document", e));
+                }
+            } else {
+                Log.e("USERNAME SEARCH", "Error searching for username: ", task.getException());
+            }
+        });
+    }
+    interface UserInfoCallback {
+        void onUserInfoRetrieved(ArrayList<String> daInfo);
     }
 
     /**
@@ -129,72 +521,43 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void uploadLocalPhoto() {
+    protected void uploadLocalPhoto(Context context, Uri fileUri, String privacyLevel) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
-        String assetFileName = "fifa.HEIC";
-        String destinationFileName = "fifa.HEIC";
+        String destinationFileName = fileUri.getLastPathSegment(); // Adjust to extract the file name correctly
+        StorageReference imageRef = storageRef.child("images/" + destinationFileName);
 
-
-        try {
-            // Open asset file descriptor
-            AssetManager assetManager = getAssets();
-            InputStream inputStream = assetManager.open(assetFileName);
-
-            // Create a temporary file in internal storage
-            File internalFile = new File(getFilesDir(), destinationFileName);
-            FileOutputStream outputStream = new FileOutputStream(internalFile);
-
-            // Copy the content from assets to the internal file
-            byte[] buffer = new byte[1024];
-            int read;
-            while ((read = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, read);
-            }
-
-            // Close streams
-            inputStream.close();
-            outputStream.flush();
-            outputStream.close();
-
-            // Get Uri for the internal file
-            Uri fileUri = Uri.fromFile(internalFile);
-
-            // Create a reference to the location in Firebase Storage where the file will be uploaded
-            StorageReference imageRef = storageRef.child("images/" + destinationFileName);
-
-            // Upload the file to Firebase Storage
-            imageRef.putFile(fileUri)
-                    .addOnSuccessListener(taskSnapshot -> {
-                        // Handle successful upload
-                        imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                            String downloadUrl = uri.toString();
-                            Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
-                            addPhotoToCollection("images/" + destinationFileName, fileUri);
-                            // Use the URL as needed
-                        });
-                    })
-                    .addOnFailureListener(exception -> {
-                        // Handle unsuccessful upload
-                        Log.e("FirebaseUpload", "Upload failed: " + exception.getMessage());
+        imageRef.putFile(fileUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    // Handle successful upload
+                    imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        String downloadUrl = uri.toString();
+                        Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
+                        addPhotoToCollection(context, "images/" + destinationFileName, fileUri, privacyLevel);
+                        // Toast message for successful upload
+                        Toast.makeText(context, "Upload successful!", Toast.LENGTH_SHORT).show();
                     });
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+                })
+                .addOnFailureListener(exception -> {
+                    // Handle unsuccessful upload
+                    Log.e("FirebaseUpload", "Upload failed: " + exception.getMessage());
+                    // Toast message for failed upload
+                    Toast.makeText(context, "Upload failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
+
 
     /**
      * @param referencePath
      * @param fileUri
      */
-    protected void addPhotoToCollection(String referencePath, Uri fileUri) {
+    protected void addPhotoToCollection(Context context, String referencePath, Uri fileUri, String privacyLevel) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
         try {
-            InputStream inputStream = getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
+            InputStream inputStream = context.getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
             if (inputStream != null) {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];
@@ -219,8 +582,9 @@ public class dataTest extends AppCompatActivity {
         Map<String, Object> newPhoto = new HashMap<>();
         newPhoto.put("Description", "This is a beautiful photo");
         newPhoto.put("Location", location);
-        newPhoto.put("Owner", db.collection("User Data").document("user000001"));
+        newPhoto.put("Owner", db.collection("User Data").document(context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in")));
         newPhoto.put("Path", referencePath);
+        newPhoto.put("PrivacyLevel", privacyLevel);
 
         collectionReference.add(newPhoto)
                 .addOnSuccessListener(documentReference -> {
