@@ -75,4 +75,11 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
         friendRequests.addAll(newData);
         notifyDataSetChanged();
     }
+
+    public String getItem(int position) {
+        if (position >= 0 && position < friendRequests.size()) {
+            return friendRequests.get(position);
+        }
+        return null;
+    }
 }
