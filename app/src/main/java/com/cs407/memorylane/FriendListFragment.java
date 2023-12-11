@@ -1,6 +1,7 @@
 package com.cs407.memorylane;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,8 @@ import android.widget.ImageButton;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import java.util.ArrayList;
 
 public class FriendListFragment extends Fragment {
 
@@ -37,7 +40,38 @@ public class FriendListFragment extends Fragment {
             transaction.commit();
         });
 
+
+        retrieveFriends();
+
         return view;
     }
+
+
+
+    protected void retrieveFriends() {
+        dataTest dataTest = new dataTest();
+
+        String userID = "ADsMGJPvOJdyzLQJdz0X"; // Replace with the actual user ID
+
+        dataTest.retrieveFriendsArray(userID, new com.cs407.memorylane.dataTest.OnFriendsListRetrievedListener() {
+            @Override
+            public void onFriendsListRetrieved(ArrayList<String> friendsList) {
+                // Handle retrieved friends list
+                for (String friend : friendsList) {
+                    Log.d("Friend", friend);
+                }
+
+                //TODO: do UI updates here
+            }
+
+            @Override
+            public void onFriendsListRetrievalFailure(String errorMessage) {
+                // Handle retrieval failure
+                Log.e("Friend Retrieval", "Failed to retrieve friends: " + errorMessage);
+            }
+        });
+    }
+
+
 }
 
