@@ -149,6 +149,119 @@ public class dataTest extends AppCompatActivity {
         void onImageDownloaded(String key);
     }
 
+    protected void loadFriendImages(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
+        DocumentReference ownerRef = db.collection("User Data").document(owner);
+        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        imageGroups.clear();
+
+        // Step 1: Retrieve the list of friends from the owner document
+        ownerRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                List<String> friendList = (List<String>) documentSnapshot.get("Friends"); // replace "friends" with the actual field name for the friends list
+                if (friendList != null && !friendList.isEmpty()) {
+                    // Step 2: Modify the query to download photos only owned by friends with PrivacyLevel set to Friends
+                    db.collection("All Photos")
+                            .whereIn("Owner", friendList)
+                            .whereEqualTo("PrivacyLevel", "Friends") // replace "PrivacyLevel" with the actual field name for privacy level
+                            .get()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful() && task.getResult() != null) {
+                                    List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                                    int totalImages = documents.size();
+                                    if (totalImages == 0) {
+                                        listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                                    }
+
+                                    AtomicInteger completedDownloads = new AtomicInteger(0);
+                                    for (DocumentSnapshot document : documents) {
+                                        String path = document.getString("Path");
+                                        GeoPoint location = document.getGeoPoint("Location");
+
+                                        if (location != null) {
+                                            // Sort the image into the proper group based on location
+                                            imageLocations.put(path, location);
+                                            String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                            imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                                        }
+
+                                        downloadImage(path, key -> {
+                                            imageDownloadedCallback.onImageDownloaded(key);
+                                            if (completedDownloads.incrementAndGet() == totalImages) {
+                                                // All images have been downloaded and cached
+                                                listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                            }
+                                        });
+                                    }
+
+                                    // Calculate centroids here after all images are loaded
+                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                    listener.onCentroidsCalculated(centroids);
+
+                                    Log.d("Important Images:", "" + imageGroups.toString());
+                                } else {
+                                    Log.d("ERRORING", "Error getting documents: ", task.getException());
+                                }
+                            });
+                } else {
+                    // No friends to load images from
+                    listener.onImagesLoaded(new ArrayList<>());
+                }
+            }
+        });
+    }
+
+    protected void loadGlobalPhotos(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        imageGroups.clear();
+
+        // Query to select all photos with PrivacyLevel set to "Global"
+        db.collection("All Photos")
+                .whereEqualTo("PrivacyLevel", "Global") // replace "PrivacyLevel" with the actual field name for privacy level
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                        int totalImages = documents.size();
+                        if (totalImages == 0) {
+                            listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                        }
+
+                        AtomicInteger completedDownloads = new AtomicInteger(0);
+                        for (DocumentSnapshot document : documents) {
+                            String path = document.getString("Path");
+                            GeoPoint location = document.getGeoPoint("Location");
+
+                            if (location != null) {
+                                // You can still sort images into groups based on location if needed
+                                String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                            }
+
+                            downloadImage(path, key -> {
+                                imageDownloadedCallback.onImageDownloaded(key);
+                                if (completedDownloads.incrementAndGet() == totalImages) {
+                                    // All images have been downloaded and cached
+                                    listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                }
+                            });
+                        }
+
+                        // If needed, calculate centroids here after all images are loaded
+                        Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                        listener.onCentroidsCalculated(centroids);
+
+                        Log.d("Important Images:", "" + imageGroups.toString());
+                    } else {
+                        Log.d("ERRORING", "Error getting documents: ", task.getException());
+                    }
+                });
+    }
+
+
+
     protected void loadImagesFromUser(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
