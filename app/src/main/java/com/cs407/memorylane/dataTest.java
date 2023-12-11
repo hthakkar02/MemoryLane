@@ -46,8 +46,9 @@ public class dataTest extends AppCompatActivity {
     /**
      * This method handles friend requests being submitted.
      * 1) Removes the friends userID from friend requests
-     * 2) Adds the friends userID in the Friends field
-     * 3) Does the vice versa of (2) for the friend
+     * 2) Adds friends userID to Friends
+     * 3) Adds the friends userID in the Friends field
+     * 4) Does the vice versa of (2) for the friend
      *
      * @param userID is the userID of the current user
      * @param friendsUserID is the userID of the user who's request was accepted
@@ -66,13 +67,19 @@ public class dataTest extends AppCompatActivity {
                                 // Add userID to "Friends" field of friendsUserID document
                                 DocumentReference friendsUserDocument = userDataCollection.document(friendsUserID);
                                 friendsUserDocument.update("Friends", FieldValue.arrayUnion(userID))
-                                        .addOnSuccessListener(aVoid2 -> Log.d("Friend Request", "Friend request accepted successfully"))
+                                        .addOnSuccessListener(aVoid2 -> {
+                                            // Remove friendsUserID from "Friend Request" field of friendsUserID document
+                                            friendsUserDocument.update("Friend Request", FieldValue.arrayRemove(userID))
+                                                    .addOnSuccessListener(aVoid3 -> Log.d("Friend Request", "Friend request accepted successfully"))
+                                                    .addOnFailureListener(e -> Log.e("Friend Request", "Failed to remove userID from friendsUserID's Friend Request: " + e.getMessage()));
+                                        })
                                         .addOnFailureListener(e -> Log.e("Friend Request", "Failed to add userID to friendsUserID's Friends: " + e.getMessage()));
                             })
                             .addOnFailureListener(e -> Log.e("Friend Request", "Failed to add friendsUserID to userID's Friends: " + e.getMessage()));
                 })
                 .addOnFailureListener(e -> Log.e("Friend Request", "Failed to remove friendsUserID from userID's Friend Request: " + e.getMessage()));
     }
+
 
 
 
