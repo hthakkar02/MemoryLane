@@ -1,6 +1,7 @@
 package com.cs407.memorylane;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,8 @@ import android.widget.ImageButton;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import java.util.ArrayList;
 
 public class FriendRequestFragment extends Fragment {
 
@@ -37,6 +40,9 @@ public class FriendRequestFragment extends Fragment {
         });
 
 
+        fetchFriendRequestsForUser("ADsMGJPvOJdyzLQJdz0X");
+
+
         handleFriendRequestAcceptance();
 
 
@@ -44,9 +50,29 @@ public class FriendRequestFragment extends Fragment {
     }
 
 
+    public void fetchFriendRequestsForUser(String userID) {
+        dataTest dataTest = new dataTest();
 
+        com.cs407.memorylane.dataTest.OnFriendRequestsRetrievedListener listener = new com.cs407.memorylane.dataTest.OnFriendRequestsRetrievedListener() {
+            @Override
+            public void onFriendRequestsRetrieved(ArrayList<String> friendRequests) {
+                // Handle the retrieved friend requests here
+                for (String request : friendRequests) {
+                    // Process each friend request as needed
+                    Log.d("Friend Request: ", request);
+                }
+            }
 
+            @Override
+            public void onFriendRequestsRetrievalFailure(String errorMessage) {
+                // Handle the failure to retrieve friend requests
+                Log.d("Friend requests retrieval failed: ", errorMessage);
+            }
+        };
 
+        // Use the method to retrieve friend requests for the given userID
+        dataTest.retrieveFriendRequestsArray(userID, listener);
+    }
 
     protected void handleFriendRequestAcceptance(){
 

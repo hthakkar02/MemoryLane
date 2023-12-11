@@ -76,6 +76,44 @@ public class dataTest extends AppCompatActivity {
 
 
 
+    interface OnFriendRequestsRetrievedListener {
+        void onFriendRequestsRetrieved(ArrayList<String> friendRequests);
+
+        void onFriendRequestsRetrievalFailure(String errorMessage);
+    }
+
+    protected void retrieveFriendRequestsArray(String userID, OnFriendRequestsRetrievedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        CollectionReference userDataCollection = db.collection("User Data");
+        DocumentReference userDocument = userDataCollection.document(userID);
+
+        userDocument.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    ArrayList<String> friendRequestsList = (ArrayList<String>) document.get("Friend Requests");
+                    Log.d("Friend Requests Array Test", "Array " + friendRequestsList);
+
+                    if (listener != null) {
+                        listener.onFriendRequestsRetrieved(friendRequestsList);
+                    }
+                } else {
+                    Log.d("Firestore", "No such document");
+                    if (listener != null) {
+                        listener.onFriendRequestsRetrievalFailure("No such document");
+                    }
+                }
+            } else {
+                Log.e("Firestore", "Error getting user data: ", task.getException());
+                if (listener != null) {
+                    listener.onFriendRequestsRetrievalFailure(task.getException().getMessage());
+                }
+            }
+        });
+    }
+
+
 
 
     /**
