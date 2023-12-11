@@ -1,11 +1,15 @@
 package com.cs407.memorylane;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import android.widget.ListView;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -13,6 +17,10 @@ import androidx.fragment.app.FragmentTransaction;
 import java.util.ArrayList;
 
 public class FriendListFragment extends Fragment {
+
+    private String userID = "";
+    private ListView friendListView;
+    private ArrayAdapter<String> friendAdapter;
 
     public FriendListFragment() {
         // Required empty public constructor
@@ -22,6 +30,20 @@ public class FriendListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.friend_list_page, container, false);
+
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE | Context.MODE_MULTI_PROCESS);
+
+        userID = sharedPreferences.getString("userID", "user not logged in");
+
+        Log.d("User ID is:", userID);
+
+        friendListView = view.findViewById(R.id.friend_list);
+        friendAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1);
+        friendListView.setAdapter(friendAdapter);
+
+
+
+
 
         ImageButton friendListButton = view.findViewById(R.id.friend_list_menu);
         ImageButton friendRequestButton = view.findViewById(R.id.friend_accept_menu);
@@ -51,8 +73,6 @@ public class FriendListFragment extends Fragment {
     protected void retrieveFriends() {
         dataTest dataTest = new dataTest();
 
-        String userID = "0jx1wTDB1mRLyFMnimQp"; // Replace with the actual user ID
-
         dataTest.retrieveFriendsArray(userID, new com.cs407.memorylane.dataTest.OnFriendsListRetrievedListener() {
             @Override
             public void onFriendsListRetrieved(ArrayList<String> friendsList) {
@@ -61,7 +81,11 @@ public class FriendListFragment extends Fragment {
                     Log.d("Friend", friend);
                 }
 
-                //TODO: do UI updates here
+                friendAdapter.clear();
+                friendAdapter.addAll(friendsList);
+
+                // Notify the adapter that the data has changed
+                friendAdapter.notifyDataSetChanged();
             }
 
             @Override
