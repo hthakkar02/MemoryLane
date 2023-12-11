@@ -64,14 +64,14 @@ android:layout_height="match_parent">
 
     <!-- Delete Profile Button -->
     <Button
-        android:id="@+id/btnDeleteProfile"
+        android:id="@+id/logoutButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/btnChangeUsername"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="70dp"
         android:backgroundTint="#D32F2F"
-        android:text="Delete Profile"
+        android:text="LOG OUT"
         android:textColor="#ffffff" />
 
 
