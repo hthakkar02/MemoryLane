@@ -17,6 +17,7 @@ import android.util.LruCache;
 import android.widget.Toast;
 
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.Tasks;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -50,6 +51,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class dataTest extends AppCompatActivity {
 
+    private static dataTest instance;
+
+    // Private constructor to prevent instantiation
+    private dataTest() {}
+
+    // Static method to get the single instance of the class
+    public static dataTest getInstance() {
+        if (instance == null) {
+            instance = new dataTest();
+        }
+        return instance;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,11 +76,17 @@ public class dataTest extends AppCompatActivity {
     int cacheSize = maxMemory / 8;
     LruCache<String, Bitmap> imageCache = new LruCache<>(cacheSize);
 
+    private Map<String, List<String>> imageGroups = new HashMap<>();
+
     // Function to add image to cache
     protected void addBitmapToCache(String key, Bitmap bitmap) {
         if (getBitmapFromCache(key) == null) {
             imageCache.put(key, bitmap);
         }
+    }
+
+    public List<String> getImagesForGroup(String groupKey) {
+        return imageGroups.getOrDefault(groupKey, new ArrayList<>());
     }
 
     // Function to retrieve image from cache
@@ -87,7 +107,7 @@ public class dataTest extends AppCompatActivity {
             // Cache the image
             addBitmapToCache(imagePath, bitmap);
 
-            Log.d("ImageCache", "Image cached successfully");
+            Log.d("ImageCache", "Image cached successfully"+imagePath);
             callback.onImageDownloaded(imagePath);
         }).addOnFailureListener(exception -> {
             // Handle errors
@@ -120,47 +140,22 @@ public class dataTest extends AppCompatActivity {
         });
     }
 
-
-
-//    protected List<String> searchUserByUsernameSubstring(String substring) {
-//        FirebaseFirestore db = FirebaseFirestore.getInstance();
-//        CollectionReference userDataCollection = db.collection("User Data");
-//
-//        try {
-//            QuerySnapshot querySnapshot = Tasks.await(
-//                    userDataCollection.whereArrayContains("Username", substring).get()
-//            );
-//
-//            List<String> matchingUsernames = new ArrayList<>();
-//
-//            for (QueryDocumentSnapshot document : querySnapshot) {
-//                // Assuming "Username" is the field in your document
-//                String foundUsername = document.getString("Username");
-//                if (foundUsername != null) {
-//                    Log.d("USERNAME FOUND", "Here is the username that matched: "+foundUsername);
-//                    matchingUsernames.add(foundUsername);
-//                }
-//            }
-//
-//            return matchingUsernames;
-//        } catch (Exception e) {
-//            // Handle exceptions here
-//            return new ArrayList<>();
-//        }
-//    }
-
     public interface OnImagesLoadedListener {
         void onImagesLoaded(ArrayList<String> imagePaths);
+        void onCentroidsCalculated(Map<String, LatLng> centroids);
     }
 
     public interface ImageDownloadedCallback {
         void onImageDownloaded(String key);
     }
 
-    protected void loadImagesFromUser(Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+    protected void loadImagesFromUser(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
         DocumentReference ownerRef = db.collection("User Data").document(owner); // Create a reference to the owner document
+        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        imageGroups.clear();
+        // Map to store centroids of each group
 
         Log.d("STATUS", "Getting here");
 
@@ -178,6 +173,15 @@ public class dataTest extends AppCompatActivity {
                                 AtomicInteger completedDownloads = new AtomicInteger(0);
                                 for (DocumentSnapshot document : documents) {
                                     String path = document.getString("Path");
+                                    GeoPoint location = document.getGeoPoint("Location");
+
+                                    if (location != null) {
+                                        // Sort the image into the proper group based on location
+                                        imageLocations.put(path, location);
+                                        String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                        imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                                    }
+
                                     downloadImage(path, key -> {
                                         imageDownloadedCallback.onImageDownloaded(key);
                                         if (completedDownloads.incrementAndGet() == totalImages) {
@@ -186,10 +190,57 @@ public class dataTest extends AppCompatActivity {
                                         }
                                     });
                                 }
+
+//                                if (completedDownloads.get() == totalImages) {
+                                    // Calculate centroids here after all images are loaded
+                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                    listener.onCentroidsCalculated(centroids);
+
+
+                                Log.d("Important Images:", ""+imageGroups.toString());
                             } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
                     }
                 });
+    }
+
+    private Map<String, LatLng> calculateCentroids(Map<String, List<String>> imageGroups, Map<String, GeoPoint> imageLocations) {
+        Map<String, LatLng> centroids = new HashMap<>();
+
+        // Iterate through each group
+        for (Map.Entry<String, List<String>> entry : imageGroups.entrySet()) {
+            String groupKey = entry.getKey();
+            List<String> imagePaths = entry.getValue();
+
+            double totalLat = 0.0;
+            double totalLng = 0.0;
+            int count = 0;
+
+            // Calculate the sum of latitudes and longitudes for the images in the group
+            for (String path : imagePaths) {
+                GeoPoint location = imageLocations.get(path);
+                if (location != null) {
+                    totalLat += location.getLatitude();
+                    totalLng += location.getLongitude();
+                    count++;
+                }
+            }
+
+            // Calculate the centroid for the group
+            if (count > 0) {
+                LatLng centroid = new LatLng(totalLat / count, totalLng / count);
+                centroids.put(groupKey, centroid);
+            }
+        }
+
+        return centroids;
+    }
+
+
+    private String findGroupKeyForLocation(GeoPoint location, double[] geoBounds) {
+        int latIndex = (int)((location.getLatitude() - geoBounds[0]) / ((geoBounds[1] - geoBounds[0]) / 10));
+        int lngIndex = (int)((location.getLongitude() - geoBounds[2]) / ((geoBounds[3] - geoBounds[2]) / 10));
+        return "Group_" + latIndex + "_" + lngIndex;
     }
 
 

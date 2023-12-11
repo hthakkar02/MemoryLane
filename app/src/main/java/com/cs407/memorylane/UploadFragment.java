@@ -103,7 +103,7 @@ public class UploadFragment extends Fragment {
     private void uploadSelectedImages() {
         List<Uri> selectedUris = adapter.getSelectedUris();
         for (Uri uri : selectedUris) {
-            dataTest dT = new dataTest();
+            dataTest dT = dataTest.getInstance();
             dT.uploadLocalPhoto(getContext(), uri);
         }
     }

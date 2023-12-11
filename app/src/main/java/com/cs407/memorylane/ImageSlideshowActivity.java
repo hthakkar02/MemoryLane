@@ -12,6 +12,9 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ImageSlideshowActivity extends AppCompatActivity implements SlideshowInfoFragment.OnFragmentInteractionListener {
 
     private ViewPager viewPager;
@@ -27,18 +30,16 @@ public class ImageSlideshowActivity extends AppCompatActivity implements Slidesh
         ImageButton menuButton = findViewById(R.id.menu_up_button);
         viewPager = findViewById(R.id.slideshow_image);
 
+        dataTest dT = dataTest.getInstance();
         // Load images and set up ViewPager
-        dataTest dT = new dataTest();
-        dT.loadImagesFromUser(this, imagePaths -> {
-            Log.d("ArrayList", imagePaths.toString());
-            pagerAdapter = new SlideshowPagerAdapter(this, imagePaths, dT);
-            viewPager.setAdapter(pagerAdapter);
-            viewPager.setCurrentItem(0);
-            updateImageCounter(0);
-        }, key -> {
-            // This is where you can handle UI updates if necessary
-            // when each individual image is downloaded and cached.
-        });
+        String groupKey = getIntent().getStringExtra("GROUP_KEY");
+        ArrayList<String> imagePathsForGroup = getIntent().getStringArrayListExtra("IMAGE_PATHS");
+
+        // Use the image paths directly
+        SlideshowPagerAdapter pagerAdapter = new SlideshowPagerAdapter(this, imagePathsForGroup, dT);
+        viewPager.setAdapter(pagerAdapter);
+        viewPager.setCurrentItem(0);
+        updateImageCounter(0);
 
         // Add onPageChangeListener
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {

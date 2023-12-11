@@ -419,7 +419,7 @@ public class CameraFragment extends Fragment {
 
                     // Now upload the image to Firebase
                     if (fileUri != null) {
-                        dataTest dT = new dataTest();
+                        dataTest dT = dataTest.getInstance();
                         dT.uploadLocalPhoto(getContext(), fileUri);
                     }
                 }

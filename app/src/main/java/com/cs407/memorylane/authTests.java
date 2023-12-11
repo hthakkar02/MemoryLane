@@ -159,7 +159,7 @@ public class authTests extends AppCompatActivity {
                 .addOnSuccessListener(documentReference -> {
                     // Document added with ID: documentReference.getId()
                     Log.d("Firestore", "Document added with ID: " + documentReference.getId());
-                    dataTest dataTest = new dataTest();
+                    dataTest dT = dataTest.getInstance();
                     //dataTest.storeUserIDToSharedPreferences(documentReference.getId());
 
                 })
