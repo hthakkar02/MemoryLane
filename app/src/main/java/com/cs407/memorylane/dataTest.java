@@ -92,7 +92,7 @@ public class dataTest extends AppCompatActivity {
             if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
                 if (document.exists()) {
-                    ArrayList<String> friendRequestsList = (ArrayList<String>) document.get("Friend Requests");
+                    ArrayList<String> friendRequestsList = (ArrayList<String>) document.get("Friend Request");
                     Log.d("Friend Requests Array Test", "Array " + friendRequestsList);
 
                     if (listener != null) {
