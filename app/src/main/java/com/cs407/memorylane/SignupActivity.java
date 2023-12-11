@@ -65,6 +65,11 @@ public class SignupActivity extends AppCompatActivity {
         signUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                if (!emptyFieldsCheck()) {
+                    return;
+                }
+
                 Intent intent = new Intent(SignupActivity.this, homeActivity.class);
 
                 String email = emailTextView.getText().toString().toLowerCase();
@@ -120,5 +125,22 @@ public class SignupActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    private boolean emptyFieldsCheck() {
+        // Check if fields are not empty
+        TextView emailTextView = findViewById(R.id.emailInput);
+        TextView passwordTextView = findViewById(R.id.passwordInput);
+        TextView usernameTextView = findViewById(R.id.usernameInput);
+
+        String email = emailTextView.getText().toString().trim();
+        String password = passwordTextView.getText().toString().trim();
+        String username = usernameTextView.getText().toString().trim();
+
+        if (email.isEmpty() || password.isEmpty() || username.isEmpty()) {
+            Log.e("Missing info", "Either the password or email is missing");
+            return false;
+        }
+        return true;
     }
 }
