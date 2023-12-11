@@ -51,7 +51,7 @@ public class FriendListFragment extends Fragment {
     protected void retrieveFriends() {
         dataTest dataTest = new dataTest();
 
-        String userID = "0jx1wTDB1mRLyFMnimQp"; // Replace with the actual user ID
+        String userID = "0jx1wTDB1mRLyFMnimQp"; // TODO: Replace with the actual user ID via shared preferences
 
         dataTest.retrieveFriendsArray(userID, new com.cs407.memorylane.dataTest.OnFriendsListRetrievedListener() {
             @Override
@@ -61,7 +61,7 @@ public class FriendListFragment extends Fragment {
                     Log.d("Friend", friend);
                 }
 
-                //TODO: do UI updates here
+                //TODO: do UI updates here.
             }
 
             @Override
