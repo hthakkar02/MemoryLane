@@ -56,7 +56,7 @@ public class dataTest extends AppCompatActivity {
         DocumentReference userDocument = db.collection("User Data").document(userID);
 
         // Update the array field "Friend" by removing the specified friendUserID
-        userDocument.update("Friend Requests", FieldValue.arrayRemove(friendUserID))
+        userDocument.update("Friend Request", FieldValue.arrayRemove(friendUserID))
                 .addOnSuccessListener(aVoid -> {
                     // Deletion successful
                     Log.d("Delete Friend Succ", "Deleted friend request successfully");
@@ -143,7 +143,7 @@ public class dataTest extends AppCompatActivity {
                 DocumentSnapshot document = task.getResult();
                 if (document.exists()) {
                     ArrayList<String> friendRequestsList = (ArrayList<String>) document.get("Friend Request");
-                    Log.d("Friend Requests Array Test", "Array " + friendRequestsList);
+                    Log.d("Friend Request Array Test", "Array " + friendRequestsList);
 
                     if (listener != null) {
                         listener.onFriendRequestsRetrieved(friendRequestsList);
