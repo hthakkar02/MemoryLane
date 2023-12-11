@@ -10,43 +10,29 @@ import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.util.LruCache;
 import android.widget.Toast;
 
 
-import com.google.android.gms.tasks.Tasks;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.StorageTask;
-import com.google.firebase.storage.UploadTask;
 
-import org.w3c.dom.Document;
-
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class dataTest extends AppCompatActivity {
 
@@ -56,6 +42,47 @@ public class dataTest extends AppCompatActivity {
         setContentView(R.layout.activity_data_test);
 
     }
+
+
+    /**
+     * This method retrieves the friends list associated with a userID. Uses a callback for async operation
+     * @param userID
+     * @returns an array of the users friends
+     */
+    protected void retrieveFriendsArray(String userID, OnFriendsListRetrievedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        CollectionReference userDataCollection = db.collection("User Data");
+        DocumentReference userDocument = userDataCollection.document(userID);
+
+        userDocument.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    ArrayList<String> friendsList = (ArrayList<String>) document.get("Friends");
+                    Log.d("Profile Friends Array Test", "Array " + friendsList);
+
+                    if (listener != null) {
+                        listener.onFriendsListRetrieved(friendsList);
+                    }
+                } else {
+                    Log.d("Firestore", "No such document");
+                }
+            } else {
+                Log.e("Firestore", "Error getting user data: ", task.getException());
+                if (listener != null) {
+                    listener.onFriendsListRetrievalFailure(task.getException().getMessage());
+                }
+            }
+        });
+    }
+
+    // Define an interface to handle callbacks
+    public interface OnFriendsListRetrievedListener {
+        void onFriendsListRetrieved(ArrayList<String> friendsList);
+        void onFriendsListRetrievalFailure(String errorMessage);
+    }
+
 
     // Example LruCache initialization in your activity or fragment
     int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
