@@ -71,14 +71,20 @@ public class FriendRequestFragment extends Fragment {
                 Log.d("Friend Accept: ", friendRequesterUserID);
                 dataTest.onFriendRequestAccepted(userID, friendRequesterUserID);
 
+                //friendRequesterUserID.replace(adapter.getItem(position),"");
+
             }
 
             @Override
             public void onDeclineClick(int position) {
                 dataTest dataTest = new dataTest();
                 String friendRequesterUserID = adapter.getItem(position);
-                Log.d("Friend Decline: ", friendRequesterUserID);
-                dataTest.onFriendRequestAccepted(userID, friendRequesterUserID);
+                Log.d("Friend Decline1: ", userID);
+                Log.d("Friend Decline2: ", friendRequesterUserID);
+                dataTest.rejectFriendRequest(userID, friendRequesterUserID);
+
+                //friendRequesterUserID.replace(adapter.getItem(position),"");
+
             }
         });
 
