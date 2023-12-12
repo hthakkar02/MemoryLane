@@ -32,6 +32,8 @@ public class SlideshowInfoFragment extends Fragment {
 
     TextView address;
 
+    TextView username;
+
     public SlideshowInfoFragment(double lat, double lon, ArrayList<String> imagePaths, int position){
         this.lat = lat;
         this.lon = lon;
@@ -91,8 +93,17 @@ public class SlideshowInfoFragment extends Fragment {
 
         address = view.findViewById(R.id.address);
         address.setText(getAddress(getActivity(), imagePaths));
+
+        username = view.findViewById(R.id.user);
+        username.setText(getUsername(imagePaths));
         return view;
     }
+
+    private String getUsername(ArrayList<String> imagePaths) {
+        dataTest dT = dataTest.getInstance();
+        return dT.getImageOwner(imagePaths.get(position));
+    }
+
     private String getAddress(Context context, ArrayList<String> imagePaths) {
         dataTest dT = dataTest.getInstance();
         GeoPoint location = dT.getImageLocation(imagePaths.get(position));
@@ -120,6 +131,7 @@ public class SlideshowInfoFragment extends Fragment {
             area.setText(getLocality(getActivity(), lat, lon));
             date.setText(getDate(imagePaths));
             address.setText(getAddress(getActivity(), imagePaths));
+            username.setText(getUsername(imagePaths));
         }
     }
 }

@@ -284,6 +284,8 @@ public class dataTest extends AppCompatActivity {
 
     private HashMap<String, Integer> imageOrientations = new HashMap<>();
 
+    private HashMap<String, String> imageOwner = new HashMap<>();
+
 
 
     // Method to retrieve the location for an image
@@ -305,6 +307,13 @@ public class dataTest extends AppCompatActivity {
     // Method to retrieve the date for an image
     public Integer getImageOrientation(String imagePath) {
         return imageOrientations.get(imagePath);
+    }
+
+    public String getImageOwner(String imagePath) {
+        if (imageOwner.get(imagePath)==null) {
+            return ("Loading...");
+        }
+        return imageOwner.get(imagePath);
     }
 
     // Method to store the date for an image
@@ -439,6 +448,24 @@ public class dataTest extends AppCompatActivity {
                                         String date = document.getString("Date");
                                         int orientation = document.getLong("Orientation").intValue();
 
+                                        //set a username equal to the callback from userIDToUsername
+                                        final String[] daUsername = {""};
+                                        userIDToUsername(document.getDocumentReference("Owner").getId(), new dataTest.OnUsernameRetrievedListener() {
+                                            @Override
+                                            public void onUsernameRetrieved(String username) {
+                                                // Handle the retrieved username here
+                                                Log.d("Username retrieved:", username);
+                                                daUsername[0] = username;
+                                                imageOwner.put(path, daUsername[0]);
+                                            }
+
+                                            @Override
+                                            public void onUsernameRetrievalFailure(String errorMessage) {
+                                                // Handle the retrieval failure here
+                                                Log.e("Username retrieval failed:", errorMessage);
+                                            }
+                                        });
+
                                         if (location != null) {
                                             imageLocations.put(path, location); // Store image location
                                             String groupKey = findGroupKeyForLocation(location, geoBounds);
@@ -503,12 +530,13 @@ public class dataTest extends AppCompatActivity {
 
                             //set a username equal to the callback from userIDToUsername
                             final String[] daUsername = {""};
-                            userIDToUsername("userID_here", new dataTest.OnUsernameRetrievedListener() {
+                            userIDToUsername(document.getDocumentReference("Owner").getId(), new dataTest.OnUsernameRetrievedListener() {
                                 @Override
                                 public void onUsernameRetrieved(String username) {
                                     // Handle the retrieved username here
                                     Log.d("Username retrieved:", username);
                                     daUsername[0] = username;
+                                    imageOwner.put(path, daUsername[0]);
                                 }
 
                                 @Override
@@ -517,8 +545,6 @@ public class dataTest extends AppCompatActivity {
                                     Log.e("Username retrieval failed:", errorMessage);
                                 }
                             });
-
-                            //username will be stored in daUsername[0]
 
                             if (location != null) {
                                 imageLocations.put(path, location); // Store image location
@@ -575,6 +601,23 @@ public class dataTest extends AppCompatActivity {
                                     String date = document.getString("Date");
                                     Integer orientation = Objects.requireNonNull(document.getDouble("Orientation")).intValue();
 
+                                    //set a username equal to the callback from userIDToUsername
+                                    final String[] daUsername = {""};
+                                    userIDToUsername(document.getDocumentReference("Owner").getId(), new dataTest.OnUsernameRetrievedListener() {
+                                        @Override
+                                        public void onUsernameRetrieved(String username) {
+                                            // Handle the retrieved username here
+                                            Log.d("Username retrieved:", username);
+                                            daUsername[0] = username;
+                                            imageOwner.put(path, daUsername[0]);
+                                        }
+
+                                        @Override
+                                        public void onUsernameRetrievalFailure(String errorMessage) {
+                                            // Handle the retrieval failure here
+                                            Log.e("Username retrieval failed:", errorMessage);
+                                        }
+                                    });
 
                                     if (location != null) {
                                         // Sort the image into the proper group based on location
