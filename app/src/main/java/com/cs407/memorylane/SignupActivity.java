@@ -1,5 +1,8 @@
 package com.cs407.memorylane;
 
+import static com.google.android.material.internal.ContextUtils.getActivity;
+import static java.security.AccessController.getContext;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -10,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -132,6 +136,8 @@ public class SignupActivity extends AppCompatActivity {
                         // The username already exists
                         // Perform actions for a non-unique username
                         Log.e("username not unique", "username not unique");
+                        //Toast.makeText(getActivity().getApplicationContext(), "Username Taken!", Toast.LENGTH_SHORT).show();
+
                     }
                 });
 

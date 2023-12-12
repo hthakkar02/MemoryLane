@@ -11,10 +11,17 @@ import android.widget.ImageButton;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
 public class FriendRequestFragment extends Fragment {
+
+    private String userID = "";
+
+    private RecyclerView recyclerView;
+    private FriendRequestAdapter adapter;
 
     public FriendRequestFragment() {
     }
@@ -26,6 +33,11 @@ public class FriendRequestFragment extends Fragment {
 
         ImageButton friendListButton = view.findViewById(R.id.friend_list_menu);
         ImageButton friendRequestButton = view.findViewById(R.id.friend_accept_menu);
+
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE | Context.MODE_MULTI_PROCESS);
+
+        userID = sharedPreferences.getString("userID", "user not logged in");
+
 
         friendListButton.setOnClickListener(v -> {
             // Switch to FriendListFragment
@@ -44,8 +56,37 @@ public class FriendRequestFragment extends Fragment {
 
         String userID = getContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).getString("userID", "User not logged in");
         fetchFriendRequestsForUser(userID);
-        handleFriendRequestAcceptance();
 
+
+        //handleFriendRequestAcceptance();
+
+        recyclerView = view.findViewById(R.id.friend_request_list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        adapter = new FriendRequestAdapter(new ArrayList<>(), new FriendRequestAdapter.OnItemClickListener() {
+            @Override
+            public void onAcceptClick(int position) {
+                dataTest dataTest = new dataTest();
+                String friendRequesterUserID = adapter.getItem(position);
+                Log.d("Friend Accept: ", friendRequesterUserID);
+                dataTest.onFriendRequestAccepted(userID, friendRequesterUserID);
+
+            }
+
+            @Override
+            public void onDeclineClick(int position) {
+                dataTest dataTest = new dataTest();
+                String friendRequesterUserID = adapter.getItem(position);
+                Log.d("Friend Decline: ", friendRequesterUserID);
+                dataTest.onFriendRequestAccepted(userID, friendRequesterUserID);
+            }
+        });
+
+        // Set the adapter to the RecyclerView
+        recyclerView.setAdapter(adapter);
+
+        // Fetch friend requests for the user
+        fetchFriendRequestsForUser(userID);
 
         return view;
     }
@@ -62,6 +103,9 @@ public class FriendRequestFragment extends Fragment {
                     // Process each friend request as needed
                     Log.d("Friend Request: ", request);
                 }
+
+                adapter.updateData(friendRequests);
+
             }
 
             @Override
