@@ -40,7 +40,7 @@ public class UserProfileFragment extends Fragment {
         // Accessing SharedPreferences from the activity
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE | Context.MODE_MULTI_PROCESS);
 
-        // Now you can use sharedPreferences to read or write data
+        
         userID = sharedPreferences.getString("userID", "user not logged in");
 
         Log.d("User ID is:", userID);
@@ -49,7 +49,7 @@ public class UserProfileFragment extends Fragment {
         TextView userName = view.findViewById(R.id.tvUserName);
         TextView memoryCount = view.findViewById(R.id.tvMemoriesMade);
 
-        // Now you can use UserName to manipulate the TextView
+        
         userName.setText("User: " + userID);
 
         Button logoutButton = view.findViewById(R.id.logoutButton);

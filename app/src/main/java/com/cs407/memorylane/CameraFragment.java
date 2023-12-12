@@ -179,7 +179,7 @@ public class CameraFragment extends Fragment {
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            // Transform you image captured size according to the surface width and height
+            
         }
 
         @Override

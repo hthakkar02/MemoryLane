@@ -280,7 +280,7 @@ public class dataTest extends AppCompatActivity {
     }
 
 
-    // Example LruCache initialization in your activity or fragment
+    
     int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
     int cacheSize = maxMemory / 8;
     LruCache<String, Bitmap> imageCache = new LruCache<>(cacheSize);
@@ -905,7 +905,7 @@ public class dataTest extends AppCompatActivity {
         String imageDate = null;
         int orientation = 0;
         try {
-            InputStream inputStream = context.getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
+            InputStream inputStream = context.getContentResolver().openInputStream(fileUri); 
             if (inputStream != null) {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];

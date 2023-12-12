@@ -48,7 +48,7 @@ public class FriendListAdapter extends ArrayAdapter<String> {
     protected void deleteFriend(String friendUsername) {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        CollectionReference userDataCollection = db.collection("User Data"); // Update with your actual collection name
+        CollectionReference userDataCollection = db.collection("User Data"); 
         Query query = userDataCollection.whereEqualTo("Username", friendUsername);
 
         query.get().addOnCompleteListener(task -> {

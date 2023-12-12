@@ -108,7 +108,7 @@ public class FriendListFragment extends Fragment {
                         @Override
                         public void onUsernameRetrievalFailure(String errorMessage) {
                             Log.d("Username retrieval failed: ", errorMessage);
-                            // You might handle retrieval failure here if needed
+                            
                         }
                     });
                 }

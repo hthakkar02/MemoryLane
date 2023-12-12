@@ -117,7 +117,7 @@ public class SignupActivity extends AppCompatActivity {
                                                         }
                                                     });
 
-                                            // Continue with your existing code...
+                                            
                                             SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
                                             String storedData = preferences.getString("key", "Default value if key not found");
 

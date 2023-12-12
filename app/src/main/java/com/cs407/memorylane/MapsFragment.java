@@ -68,7 +68,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                .findFragmentById(R.id.map); // Make sure you have a <fragment> with id="@+id/map" in your fragment_map.xml
+                .findFragmentById(R.id.map); 
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
@@ -197,9 +197,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     }
 
     private void navigateToUserProfile() {
-        Fragment userProfileFragment = new UserProfileFragment(); // Assuming you have created this
+        Fragment userProfileFragment = new UserProfileFragment(); 
         FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, userProfileFragment); // Replace with your container ID
+        transaction.replace(R.id.fragment_container, userProfileFragment); 
         transaction.addToBackStack(null);
         transaction.commit();
     }
@@ -250,11 +250,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     return true;
     }
 //        // Replace with the desired fragment
-//        Fragment newFragment = new SlideshowInfoFragment(); // Replace with your target fragment
+
 //
 //        // Perform the fragment transaction
 //        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-//        transaction.replace(R.id.fragment_container, newFragment); // Replace 'your_fragment_container' with your actual container ID
+
 //        transaction.addToBackStack(null); // Add this transaction to the back stack (optional)
 //        transaction.commit();
 //

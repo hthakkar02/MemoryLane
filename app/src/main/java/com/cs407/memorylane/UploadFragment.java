@@ -84,14 +84,14 @@ public class UploadFragment extends Fragment {
 
         uploadSpinner = view.findViewById(R.id.upload_type_spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
-                R.array.upload_types_array, android.R.layout.simple_spinner_item); // Define this array in your resources
+                R.array.upload_types_array, android.R.layout.simple_spinner_item); 
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         uploadSpinner.setAdapter(adapter);
 
         // Initialize the bottom bar
         LinearLayout bottomBar = view.findViewById(R.id.top_bar);
 
-        // Assuming you have a button to trigger upload
+        
         Button uploadButton = view.findViewById(R.id.upload_button);
         uploadButton.setOnClickListener(v -> uploadSelectedImages());
 
