@@ -58,11 +58,11 @@ public class FriendRequestFragment extends Fragment {
         });
 
 
+        String userID = getContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).getString("userID", "User not logged in");
         fetchFriendRequestsForUser(userID);
 
 
         //handleFriendRequestAcceptance();
-
 
         recyclerView = view.findViewById(R.id.friend_request_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -147,4 +147,14 @@ public class FriendRequestFragment extends Fragment {
         dataTest.retrieveFriendRequestsArray(userID, listener);
     }
 
+    protected void handleFriendRequestAcceptance(){
+
+        // Assume userID and friendsUserID are obtained or set somehow
+        String userID = "UXnCetghE7VaSs1ZLzmI";
+        String friendsUserID = "ADsMGJPvOJdyzLQJdz0X";
+
+        dataTest dataTest = new dataTest();
+        dataTest.onFriendRequestAccepted(userID, friendsUserID);
+
+    }
 }
