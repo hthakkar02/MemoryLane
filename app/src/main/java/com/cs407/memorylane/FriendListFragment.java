@@ -41,7 +41,7 @@ public class FriendListFragment extends Fragment {
         Log.d("User ID is:", userID);
 
         friendListView = view.findViewById(R.id.friend_list);
-        friendAdapter = new FriendListAdapter(getContext(), new ArrayList<>());
+        friendAdapter = new FriendListAdapter(getContext(), userID, new ArrayList<>());
         friendListView.setAdapter(friendAdapter);
 
 

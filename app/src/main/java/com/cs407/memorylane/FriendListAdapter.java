@@ -12,8 +12,10 @@ import android.widget.TextView;
 import java.util.List;
 
 public class FriendListAdapter extends ArrayAdapter<String> {
-    public FriendListAdapter(Context context, List<String> friends) {
+    private String userID;
+    public FriendListAdapter(Context context, String userID, List<String> friends) {
         super(context, 0, friends);
+        this.userID = userID;
     }
 
     @Override
@@ -38,10 +40,16 @@ public class FriendListAdapter extends ArrayAdapter<String> {
         return convertView;
     }
 
-    private void deleteFriend(String friend) {
-        // Implement friend deletion logic here
-        // Example: dataTest.getInstance().deleteFriend(friend);
-        Log.d("Delete Friend", "Deleting friend: " + friend);
+    private void deleteFriend(String friendUserID) {
+
+        //String friendUserID = convertUsernameToUserID(friendUsername);
+
+        dataTest.getInstance().deleteFriend(userID, friendUserID);
+        // Optionally, remove the friend from the adapter and refresh the list
+        remove(friendUserID);
+        notifyDataSetChanged();
     }
+
 }
+
 
