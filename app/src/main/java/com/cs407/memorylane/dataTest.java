@@ -45,6 +45,40 @@ public class dataTest extends AppCompatActivity {
 
 
     /**
+     * This method convert the userID to the username
+     * @param userID
+     * @param listener
+     */
+    public void userIDToUsername(String userID, OnUsernameRetrievedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userDocRef = db.collection("User Data").document(userID);
+
+        userDocRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                if (task.getResult() != null && task.getResult().exists()) {
+                    String username = task.getResult().getString("username");
+                    if (username != null) {
+                        listener.onUsernameRetrieved(username);
+                    } else {
+                        listener.onUsernameRetrievalFailure("Username field not found");
+                    }
+                } else {
+                    listener.onUsernameRetrievalFailure("No such document");
+                }
+            } else {
+                listener.onUsernameRetrievalFailure("Error: " + task.getException().getMessage());
+            }
+        });
+    }
+
+    // Listener interface for username retrieval
+    public interface OnUsernameRetrievedListener {
+        void onUsernameRetrieved(String username);
+
+        void onUsernameRetrievalFailure(String errorMessage);
+    }
+
+    /**
      * This method rejects a friend request by removing the friend from the friend requests array.
      *
      * @param userID users user ID
