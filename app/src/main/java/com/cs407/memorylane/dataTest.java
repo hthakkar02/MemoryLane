@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -280,6 +282,10 @@ public class dataTest extends AppCompatActivity {
     // Map to store image locations
     private HashMap<String, GeoPoint> imageLocations = new HashMap<>();
 
+    private HashMap<String, Integer> imageOrientations = new HashMap<>();
+
+
+
     // Method to retrieve the location for an image
     public GeoPoint getImageLocation(String imagePath) {
         return imageLocations.get(imagePath);
@@ -294,6 +300,11 @@ public class dataTest extends AppCompatActivity {
     // Method to retrieve the date for an image
     public String getImageDate(String imagePath) {
         return imageDates.get(imagePath);
+    }
+
+    // Method to retrieve the date for an image
+    public Integer getImageOrientation(String imagePath) {
+        return imageOrientations.get(imagePath);
     }
 
     // Method to store the date for an image
@@ -321,7 +332,7 @@ public class dataTest extends AppCompatActivity {
 
 
     // Function to download an image from Firebase Storage
-    protected void downloadImage(String imagePath, ImageDownloadedCallback callback) {
+    protected void downloadImage(int orientation, String imagePath, ImageDownloadedCallback callback) {
         StorageReference storageRef = FirebaseStorage.getInstance().getReference();
         StorageReference imageRef = storageRef.child(imagePath);
 
@@ -329,8 +340,9 @@ public class dataTest extends AppCompatActivity {
         imageRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(bytes -> {
             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
+            Bitmap rotatedBitmap = rotateBitmap(bitmap, orientation);
             // Cache the image
-            addBitmapToCache(imagePath, bitmap);
+            addBitmapToCache(imagePath, rotatedBitmap);
 
             Log.d("ImageCache", "Image cached successfully"+imagePath);
             callback.onImageDownloaded(imagePath);
@@ -339,6 +351,25 @@ public class dataTest extends AppCompatActivity {
             exception.printStackTrace();
         });
 
+    }
+
+    private Bitmap rotateBitmap(Bitmap original, int orientation) {
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(270);
+                break;
+            case ExifInterface.ORIENTATION_NORMAL:
+            default:
+                return original;
+        }
+        return Bitmap.createBitmap(original, 0, 0, original.getWidth(), original.getHeight(), matrix, true);
     }
 
     public interface UsernameSearchCallback {
@@ -406,6 +437,7 @@ public class dataTest extends AppCompatActivity {
                                         String path = document.getString("Path");
                                         GeoPoint location = document.getGeoPoint("Location");
                                         String date = document.getString("Date");
+                                        int orientation = document.getLong("Orientation").intValue();
 
                                         if (location != null) {
                                             imageLocations.put(path, location); // Store image location
@@ -416,7 +448,7 @@ public class dataTest extends AppCompatActivity {
                                         if (date != null)
                                             imageDates.put(path, date);
 
-                                        downloadImage(path, key -> {
+                                        downloadImage(orientation, path, key -> {
                                             imageDownloadedCallback.onImageDownloaded(key);
                                             if (completedDownloads.incrementAndGet() == documents.size()) {
                                                 // All images have been downloaded and cached
@@ -464,6 +496,10 @@ public class dataTest extends AppCompatActivity {
                             GeoPoint location = document.getGeoPoint("Location");
                             String date = document.getString("Date");
 
+                            int orientation = document.getLong("Orientation").intValue();
+
+                            imageOrientations.put(path, orientation);
+
 
                             //set a username equal to the callback from userIDToUsername
                             final String[] daUsername = {""};
@@ -484,7 +520,6 @@ public class dataTest extends AppCompatActivity {
 
                             //username will be stored in daUsername[0]
 
-
                             if (location != null) {
                                 imageLocations.put(path, location); // Store image location
                                 String groupKey = findGroupKeyForLocation(location, geoBounds);
@@ -494,7 +529,7 @@ public class dataTest extends AppCompatActivity {
                             if (date != null)
                                 imageDates.put(path, date);
 
-                            downloadImage(path, key -> {
+                            downloadImage(orientation, path, key -> {
                                 imageDownloadedCallback.onImageDownloaded(key);
                                 if (completedDownloads.incrementAndGet() == documents.size()) {
                                     // Call listeners after all images are processed
@@ -538,6 +573,8 @@ public class dataTest extends AppCompatActivity {
                                     String path = document.getString("Path");
                                     GeoPoint location = document.getGeoPoint("Location");
                                     String date = document.getString("Date");
+                                    Integer orientation = Objects.requireNonNull(document.getDouble("Orientation")).intValue();
+
 
                                     if (location != null) {
                                         // Sort the image into the proper group based on location
@@ -550,7 +587,7 @@ public class dataTest extends AppCompatActivity {
                                     if (date != null)
                                         imageDates.put(path, date);
 
-                                    downloadImage(path, key -> {
+                                    downloadImage(orientation, path, key -> {
                                         imageDownloadedCallback.onImageDownloaded(key);
                                         if (completedDownloads.incrementAndGet() == totalImages) {
                                             // All images have been downloaded and cached
@@ -812,12 +849,15 @@ public class dataTest extends AppCompatActivity {
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
         String imageDate = null;
+        int orientation = 0;
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
             if (inputStream != null) {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];
                 boolean hasLatLong = exifInterface.getLatLong(latLong);
+                orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+
                 if (hasLatLong) {
                     float latitude = latLong[0];
                     float longitude = latLong[1];
@@ -856,10 +896,10 @@ public class dataTest extends AppCompatActivity {
         newPhoto.put("Owner", db.collection("User Data").document(context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in")));
         newPhoto.put("Path", referencePath);
         newPhoto.put("PrivacyLevel", privacyLevel);
+        newPhoto.put("Orientation", orientation);
         if (imageDate != null) {
             newPhoto.put("Date", imageDate); // Add the date to the photo document
-        }
-        else {
+        } else {
             newPhoto.put("Date", "No Date Provided");
         }
 

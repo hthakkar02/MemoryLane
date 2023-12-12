@@ -48,7 +48,7 @@ public class SlideshowPagerAdapter extends PagerAdapter {
             Log.d("IMAGE ISSUE", "image not in cache");
         }
 
-        dT.downloadImage(cacheKey, newKey -> {
+        dT.downloadImage(dT.getImageOrientation(photoUrls.get(position)), cacheKey, newKey -> {
             Bitmap newCachedImage = dT.getBitmapFromCache(newKey);
             if (newCachedImage != null) {
                 imageView.setImageBitmap(newCachedImage);

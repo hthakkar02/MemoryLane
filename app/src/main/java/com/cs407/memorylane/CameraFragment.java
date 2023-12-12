@@ -398,6 +398,12 @@ public class CameraFragment extends Fragment {
                     try {
                         output = getActivity().getContentResolver().openOutputStream(fileUri);
                         output.write(bytes);
+
+                        // Now handle the EXIF data
+                        String imagePath = getRealPathFromURI(fileUri);
+                        ExifInterface exifInterface = new ExifInterface(imagePath);
+                        exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(convertToExifOrientation(totalRotation)));
+                        exifInterface.saveAttributes();
                     } finally {
                         if (output != null) {
                             output.close();
@@ -405,6 +411,7 @@ public class CameraFragment extends Fragment {
                     }
                 }
             };
+
 
             reader.setOnImageAvailableListener(readerListener, null);
 
@@ -439,6 +446,21 @@ public class CameraFragment extends Fragment {
         }
     }
 
+    private int convertToExifOrientation(int rotationDegrees) {
+        // Convert totalRotation into EXIF orientation
+        switch (rotationDegrees) {
+            case 0:
+                return ExifInterface.ORIENTATION_NORMAL;
+            case 90:
+                return ExifInterface.ORIENTATION_ROTATE_90;
+            case 180:
+                return ExifInterface.ORIENTATION_ROTATE_180;
+            case 270:
+                return ExifInterface.ORIENTATION_ROTATE_270;
+            default:
+                return ExifInterface.ORIENTATION_UNDEFINED;
+        }
+    }
 
     // Helper method to get real file path from URI
     public String getRealPathFromURI(Uri contentUri) {
