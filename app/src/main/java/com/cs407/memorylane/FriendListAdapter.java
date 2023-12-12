@@ -10,12 +10,14 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.List;
+import java.util.Map;
 
 public class FriendListAdapter extends ArrayAdapter<String> {
+    private Map<String, String> usernameToUserIDMap;
     private String userID;
-    public FriendListAdapter(Context context, String userID, List<String> friends) {
+    public FriendListAdapter(Context context, Map<String,String> usernameToUserIDMap, List<String> friends) {
         super(context, 0, friends);
-        this.userID = userID;
+        this.usernameToUserIDMap = usernameToUserIDMap;
     }
 
     @Override
@@ -40,9 +42,9 @@ public class FriendListAdapter extends ArrayAdapter<String> {
         return convertView;
     }
 
-    private void deleteFriend(String friendUserID) {
+    private void deleteFriend(String friendUsername) {
 
-        //String friendUserID = convertUsernameToUserID(friendUsername);
+        String friendUserID = usernameToUserIDMap.get(friendUsername);
 
         dataTest.getInstance().deleteFriend(userID, friendUserID);
         // Optionally, remove the friend from the adapter and refresh the list

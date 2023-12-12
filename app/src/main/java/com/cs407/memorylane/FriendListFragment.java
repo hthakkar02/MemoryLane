@@ -15,6 +15,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FriendListFragment extends Fragment {
@@ -41,7 +43,7 @@ public class FriendListFragment extends Fragment {
         Log.d("User ID is:", userID);
 
         friendListView = view.findViewById(R.id.friend_list);
-        friendAdapter = new FriendListAdapter(getContext(), userID, new ArrayList<>());
+        //friendAdapter = new FriendListAdapter(getContext(), userID, new ArrayList<>());
         friendListView.setAdapter(friendAdapter);
 
 
@@ -75,6 +77,7 @@ public class FriendListFragment extends Fragment {
 
     protected void retrieveFriends() {
         dataTest dT = dataTest.getInstance();
+        Map<String, String> usernameToUserIDMap = new HashMap<>();
 
         dT.retrieveFriendsArray(userID, new dataTest.OnFriendsListRetrievedListener(){
             @Override
@@ -91,6 +94,7 @@ public class FriendListFragment extends Fragment {
                     dT.userIDToUsername(friend, new dataTest.OnUsernameRetrievedListener() {
                         @Override
                         public void onUsernameRetrieved(String username) {
+                            usernameToUserIDMap.put(username, friend);
                             usernamesList.add(username);
                             Log.d("Username of Friend:", username);
 
@@ -99,9 +103,12 @@ public class FriendListFragment extends Fragment {
 
                             // If all usernames are retrieved, update the adapter
                             if (count == friendsList.size()) {
-                                friendAdapter.clear();
-                                friendAdapter.addAll(usernamesList);
-                                friendAdapter.notifyDataSetChanged();
+                                //friendAdapter.clear();
+                                //friendAdapter.addAll(usernamesList);
+                                //friendAdapter.notifyDataSetChanged();
+                                friendAdapter = new FriendListAdapter(getContext(), usernameToUserIDMap, usernamesList);
+                                friendListView.setAdapter(friendAdapter);
+
                             }
                         }
 
