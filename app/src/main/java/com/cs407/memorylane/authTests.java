@@ -3,10 +3,12 @@ package com.cs407.memorylane;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -150,7 +152,7 @@ public class authTests extends AppCompatActivity {
      * @param password
      * @param username
      */
-    protected CompletableFuture<Boolean> signUpUser(String email, String password, String username) {
+    protected CompletableFuture<Boolean> signUpUser(Context context, String email, String password, String username) {
         mAuth = FirebaseAuth.getInstance();
         CompletableFuture<Boolean> signUpFuture = new CompletableFuture<>();
 
@@ -163,6 +165,7 @@ public class authTests extends AppCompatActivity {
 
                         signUpFuture.complete(true); // Sign-up successful
                     } else {
+                        Toast.makeText(context, "Failed to Sign up", Toast.LENGTH_SHORT).show();
                         Log.w("Failed User Sign up", "createUserWithEmail:failure", task.getException());
                         signUpFuture.complete(false); // Sign-up failed
                     }
@@ -170,6 +173,17 @@ public class authTests extends AppCompatActivity {
 
 
         return signUpFuture;
+    }
+    protected void sendPasswordResetEmail(Context context, String email) {
+        mAuth = FirebaseAuth.getInstance();
+        mAuth.sendPasswordResetEmail(email)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(context, "Reset instructions sent to your email", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(context, "Failed to send reset email", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
 
@@ -219,7 +233,7 @@ public class authTests extends AppCompatActivity {
      * @param email
      * @param password
      */
-    protected CompletableFuture<Boolean> signInUser(String email, String password) {
+    protected CompletableFuture<Boolean> signInUser(Context context, String email, String password) {
         mAuth = FirebaseAuth.getInstance();
         CompletableFuture<Boolean> signInFuture = new CompletableFuture<>();
 
@@ -234,6 +248,7 @@ public class authTests extends AppCompatActivity {
                         signInFuture.complete(true); // Sign-in successful
                     } else {
                         // If sign in fails, display a message to the user.
+                        Toast.makeText(context, "Failed to sign-in", Toast.LENGTH_SHORT).show();
                         Log.w("Failed User Sign In", "signInWithEmail:failure", task.getException());
 
                         signInFuture.complete(false); // Sign-in failed

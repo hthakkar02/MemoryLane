@@ -1,16 +1,20 @@
 package com.cs407.memorylane;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -26,6 +30,14 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        TextView forgotPassword = findViewById(R.id.forgotPasswordText);
+        forgotPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                promptResetPassword();
+            }
+        });
 
         Button loginButton = findViewById(R.id.loginButton);
         loginButton.setOnClickListener(new View.OnClickListener() {
@@ -46,7 +58,7 @@ public class LoginActivity extends AppCompatActivity {
 
                 // Do login
                 authTests authTests = new authTests();
-                authTests.signInUser(email, password)
+                authTests.signInUser(LoginActivity.this, email, password)
                         .thenAccept(isSignInSuccessful -> {
                             if (isSignInSuccessful) {
                                 // Query Firestore for matching email
@@ -80,14 +92,15 @@ public class LoginActivity extends AppCompatActivity {
                                 startActivity(intent);
                                 finish();
                             } else {
-                                // Code to execute when sign-in fails
                                 Log.e("User Sign In Error", "Error during sign-in");
                             }
+
                         });
             }
         });
 
         Button signUpButton = findViewById(R.id.signUpButton);
+
         signUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -105,6 +118,27 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+    private void promptResetPassword() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Reset Password");
+        builder.setMessage("Enter your email to receive reset instructions");
+
+        // Set up the input
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("Send", (dialog, which) -> resetPassword(input.getText().toString()));
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        builder.show();
+    }
+
+    private void resetPassword(String email) {
+        authTests aT = new authTests();
+        aT.sendPasswordResetEmail(this, email);
     }
 
     /**
@@ -126,6 +160,7 @@ public class LoginActivity extends AppCompatActivity {
         String password = passwordTextView.getText().toString().trim();
 
         if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Email or password is empty", Toast.LENGTH_SHORT).show();
             Log.e("Missing info", "Either the password or email is missing");
             return false;
         }

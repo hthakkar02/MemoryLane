@@ -87,7 +87,7 @@ public class SignupActivity extends AppCompatActivity {
                         // The username is unique
                         // Perform actions for a unique username
 
-                        authTests.signUpUser(email, password, username)
+                        authTests.signUpUser(SignupActivity.this, email, password, username)
                                 .thenAccept(isSignUpSuccessful -> {
                                     if (isSignUpSuccessful) {
                                         authTests.createNewUserDuringSignUp(username, email);
@@ -157,6 +157,7 @@ public class SignupActivity extends AppCompatActivity {
         String username = usernameTextView.getText().toString().trim();
 
         if (email.isEmpty() || password.isEmpty() || username.isEmpty()) {
+            Toast.makeText(this, "One or more of the fields are empty", Toast.LENGTH_SHORT).show();
             Log.e("Missing info", "Either the password or email is missing");
             return false;
         }
