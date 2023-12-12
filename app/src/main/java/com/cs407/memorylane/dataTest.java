@@ -459,6 +459,8 @@ public class dataTest extends AppCompatActivity {
                                         String date = document.getString("Date");
                                         int orientation = document.getLong("Orientation").intValue();
 
+                                        imageOrientations.put(path, orientation);
+
                                         //set a username equal to the callback from userIDToUsername
                                         final String[] daUsername = {""};
                                         userIDToUsername(document.getDocumentReference("Owner").getId(), new dataTest.OnUsernameRetrievedListener() {
@@ -533,8 +535,7 @@ public class dataTest extends AppCompatActivity {
                             String path = document.getString("Path");
                             GeoPoint location = document.getGeoPoint("Location");
                             String date = document.getString("Date");
-
-                            int orientation = document.getLong("Orientation").intValue();
+                            Integer orientation = document.getLong("Orientation").intValue();
 
                             imageOrientations.put(path, orientation);
 
@@ -612,6 +613,8 @@ public class dataTest extends AppCompatActivity {
                                     String date = document.getString("Date");
                                     Integer orientation = Objects.requireNonNull(document.getDouble("Orientation")).intValue();
 
+                                    imageOrientations.put(path, orientation);
+
                                     //set a username equal to the callback from userIDToUsername
                                     final String[] daUsername = {""};
                                     userIDToUsername(document.getDocumentReference("Owner").getId(), new dataTest.OnUsernameRetrievedListener() {
@@ -636,6 +639,7 @@ public class dataTest extends AppCompatActivity {
                                         String groupKey = findGroupKeyForLocation(location, geoBounds);
                                         imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
                                     }
+
 
 
                                     if (date != null)
