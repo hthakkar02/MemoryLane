@@ -441,7 +441,6 @@ public class dataTest extends AppCompatActivity {
         });
     }
 
-
     protected void loadGlobalImages(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         imageLocations = new HashMap<>();
@@ -464,7 +463,27 @@ public class dataTest extends AppCompatActivity {
                             String path = document.getString("Path");
                             GeoPoint location = document.getGeoPoint("Location");
                             String date = document.getString("Date");
-//                            String username = getUsernameFromRef(document.getDocumentReference("Owner"));
+
+
+                            //set a username equal to the callback from userIDToUsername
+                            final String[] daUsername = {""};
+                            userIDToUsername("userID_here", new dataTest.OnUsernameRetrievedListener() {
+                                @Override
+                                public void onUsernameRetrieved(String username) {
+                                    // Handle the retrieved username here
+                                    Log.d("Username retrieved:", username);
+                                    daUsername[0] = username;
+                                }
+
+                                @Override
+                                public void onUsernameRetrievalFailure(String errorMessage) {
+                                    // Handle the retrieval failure here
+                                    Log.e("Username retrieval failed:", errorMessage);
+                                }
+                            });
+
+                            //username will be stored in daUsername[0]
+
 
                             if (location != null) {
                                 imageLocations.put(path, location); // Store image location
