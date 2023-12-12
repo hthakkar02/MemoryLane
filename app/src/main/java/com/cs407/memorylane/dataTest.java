@@ -45,7 +45,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -82,6 +85,33 @@ public class dataTest extends AppCompatActivity {
 
     private Map<String, List<String>> imageGroups = new HashMap<>();
 
+    // Map to store image dates
+    private HashMap<String, String> imageDates = new HashMap<>();
+
+    // Map to store image locations
+    private HashMap<String, GeoPoint> imageLocations = new HashMap<>();
+
+    // Method to retrieve the location for an image
+    public GeoPoint getImageLocation(String imagePath) {
+        return imageLocations.get(imagePath);
+    }
+
+    // Method to store the location for an image
+    public void setImageLocation(String imagePath, GeoPoint location) {
+        imageLocations.put(imagePath, location);
+    }
+
+
+    // Method to retrieve the date for an image
+    public String getImageDate(String imagePath) {
+        return imageDates.get(imagePath);
+    }
+
+    // Method to store the date for an image
+    public void setImageDate(String imagePath, String date) {
+        imageDates.put(imagePath, date);
+    }
+
     // Function to add image to cache
     protected void addBitmapToCache(String key, Bitmap bitmap) {
         if (getBitmapFromCache(key) == null) {
@@ -92,6 +122,8 @@ public class dataTest extends AppCompatActivity {
     public List<String> getImagesForGroup(String groupKey) {
         return imageGroups.getOrDefault(groupKey, new ArrayList<>());
     }
+
+
 
     // Function to retrieve image from cache
     protected Bitmap getBitmapFromCache(String key) {
@@ -157,7 +189,8 @@ public class dataTest extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
         DocumentReference ownerRef = db.collection("User Data").document(owner);
-        Map<String, GeoPoint> imageLocations = new HashMap<>();
+        imageLocations = new HashMap<>();
+        imageDates = new HashMap<>();
         imageGroups.clear();
 
         ownerRef.get().addOnSuccessListener(documentSnapshot -> {
@@ -183,12 +216,16 @@ public class dataTest extends AppCompatActivity {
                                     for (DocumentSnapshot document : documents) {
                                         String path = document.getString("Path");
                                         GeoPoint location = document.getGeoPoint("Location");
+                                        String date = document.getString("Date");
 
                                         if (location != null) {
                                             imageLocations.put(path, location); // Store image location
                                             String groupKey = findGroupKeyForLocation(location, geoBounds);
                                             imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
                                         }
+
+                                        if (date != null)
+                                            imageDates.put(path, date);
 
                                         downloadImage(path, key -> {
                                             imageDownloadedCallback.onImageDownloaded(key);
@@ -218,7 +255,8 @@ public class dataTest extends AppCompatActivity {
 
     protected void loadGlobalImages(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        Map<String, GeoPoint> imageLocations = new HashMap<>();
+        imageLocations = new HashMap<>();
+        imageDates = new HashMap<>();
         imageGroups.clear();
 
         db.collection("All Photos")
@@ -236,12 +274,17 @@ public class dataTest extends AppCompatActivity {
                         for (DocumentSnapshot document : documents) {
                             String path = document.getString("Path");
                             GeoPoint location = document.getGeoPoint("Location");
+                            String date = document.getString("Date");
+//                            String username = getUsernameFromRef(document.getDocumentReference("Owner"));
 
                             if (location != null) {
                                 imageLocations.put(path, location); // Store image location
                                 String groupKey = findGroupKeyForLocation(location, geoBounds);
                                 imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
                             }
+
+                            if (date != null)
+                                imageDates.put(path, date);
 
                             downloadImage(path, key -> {
                                 imageDownloadedCallback.onImageDownloaded(key);
@@ -260,12 +303,12 @@ public class dataTest extends AppCompatActivity {
     }
 
 
-
     protected void loadImagesFromUser(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
         DocumentReference ownerRef = db.collection("User Data").document(owner); // Create a reference to the owner document
-        Map<String, GeoPoint> imageLocations = new HashMap<>(); // Map to store image paths and their locations
+        imageLocations = new HashMap<>();
+        imageDates = new HashMap<>();
         imageGroups.clear();
         // Map to store centroids of each group
 
@@ -286,6 +329,7 @@ public class dataTest extends AppCompatActivity {
                                 for (DocumentSnapshot document : documents) {
                                     String path = document.getString("Path");
                                     GeoPoint location = document.getGeoPoint("Location");
+                                    String date = document.getString("Date");
 
                                     if (location != null) {
                                         // Sort the image into the proper group based on location
@@ -293,6 +337,10 @@ public class dataTest extends AppCompatActivity {
                                         String groupKey = findGroupKeyForLocation(location, geoBounds);
                                         imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
                                     }
+
+
+                                    if (date != null)
+                                        imageDates.put(path, date);
 
                                     downloadImage(path, key -> {
                                         imageDownloadedCallback.onImageDownloaded(key);
@@ -555,6 +603,7 @@ public class dataTest extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
+        String imageDate = null;
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
             if (inputStream != null) {
@@ -566,6 +615,21 @@ public class dataTest extends AppCompatActivity {
                     float longitude = latLong[1];
                     // Use latitude and longitude as needed
                     location = new GeoPoint(latitude, longitude);
+
+                    imageDate = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
+                    if (imageDate != null && !imageDate.isEmpty()) {
+                        SimpleDateFormat originalFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.getDefault());
+                        SimpleDateFormat targetFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
+                        try {
+                            Date date = originalFormat.parse(imageDate);
+                            if (date != null) {
+                                imageDate = targetFormat.format(date);
+                            }
+                        } catch (ParseException e) {
+                            Log.e("Date Parsing", "Error parsing the date: " + imageDate, e);
+                        }
+                    }
+                    inputStream.close();
 
                 } else {
                     // No location information available
@@ -584,6 +648,12 @@ public class dataTest extends AppCompatActivity {
         newPhoto.put("Owner", db.collection("User Data").document(context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in")));
         newPhoto.put("Path", referencePath);
         newPhoto.put("PrivacyLevel", privacyLevel);
+        if (imageDate != null) {
+            newPhoto.put("Date", imageDate); // Add the date to the photo document
+        }
+        else {
+            newPhoto.put("Date", "No Date Provided");
+        }
 
         collectionReference.add(newPhoto)
                 .addOnSuccessListener(documentReference -> {
@@ -597,32 +667,41 @@ public class dataTest extends AppCompatActivity {
     }
     public String getStreetFromCoordinates(Context context, double latitude, double longitude) {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
-        String streetName = "";
+        String fullAddress = "";
 
         try {
             List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
 
-            if (addresses != null && addresses.size() > 0) {
+            if (addresses != null && !addresses.isEmpty()) {
                 Address address = addresses.get(0);
-
-                streetName = addressThoroughfare(address);
+                fullAddress = formatFullAddress(address);
             } else {
-                streetName = "No street found";
+                fullAddress = "No address found";
             }
         } catch (IOException e) {
-            Log.e("StreetConverter", "Error getting street from coordinates", e);
+            Log.e("StreetConverter", "Error getting address from coordinates", e);
         }
 
-        return streetName;
+        return fullAddress;
     }
 
-    private String addressThoroughfare(Address address) {
-        if (address != null && address.getThoroughfare() != null) {
-            return address.getThoroughfare();
+    private String formatFullAddress(Address address) {
+        if (address != null) {
+            String streetNumber = address.getFeatureName(); // Often the street number
+            String streetName = address.getThoroughfare(); // Street name
+
+            if (streetNumber != null && streetName != null) {
+                return streetNumber + " " + streetName;
+            } else if (streetName != null) {
+                return streetName; // Only street name available
+            } else {
+                return "Address not available";
+            }
         } else {
-            return "Thoroughfare not available";
+            return "Address not available";
         }
     }
+
 
     public String getNeighborhoodFromCoordinates(Context context, double latitude, double longitude) {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
@@ -647,6 +726,7 @@ public class dataTest extends AppCompatActivity {
     }
 
     private String addressLocality(Address address) {
+        Log.d("NEIGHBORHOOD", ""+address);
         if (address != null && address.getLocality() != null) {
             return address.getLocality();
         } else {

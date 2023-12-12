@@ -13,18 +13,30 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.google.firebase.firestore.GeoPoint;
 import com.google.type.LatLng;
+
+import java.util.ArrayList;
 
 public class SlideshowInfoFragment extends Fragment {
 
     double lat;
     double lon;
 
+    ArrayList<String> imagePaths = new ArrayList();
+
+    int position;
+
+    TextView area;
+    TextView date;
+
     TextView address;
 
-    public SlideshowInfoFragment(double lat, double lon){
+    public SlideshowInfoFragment(double lat, double lon, ArrayList<String> imagePaths, int position){
         this.lat = lat;
         this.lon = lon;
+        this.imagePaths = imagePaths;
+        this.position = position;
     }
 
     public interface OnFragmentInteractionListener {
@@ -71,15 +83,45 @@ public class SlideshowInfoFragment extends Fragment {
             }
         });
 
+        area = view.findViewById(R.id.area);
+        area.setText(getLocality(getActivity(), lat, lon));
+
+        date = view.findViewById(R.id.date);
+        date.setText(getDate(imagePaths));
+
         address = view.findViewById(R.id.address);
-        address.setText(getStreetAdress(getActivity(), lat, lon));
+        address.setText(getAddress(getActivity(), imagePaths));
 
         return view;
     }
 
-    private String getStreetAdress(Context context, double lat, double lon) {
+    private String getAddress(Context context, ArrayList<String> imagePaths) {
+        dataTest dT = dataTest.getInstance();
+        GeoPoint location = dT.getImageLocation(imagePaths.get(position));
+        return dT.getStreetFromCoordinates(context, location.getLatitude(), location.getLongitude());
+    }
+
+    private String getDate(ArrayList<String> imagePaths) {
+        dataTest dT = dataTest.getInstance();
+        return dT.getImageDate(imagePaths.get(position));
+    }
+
+    private String getLocality(Context context, double lat, double lon) {
         dataTest dT = dataTest.getInstance();
         Log.d("NEIGHBORHOOD", dT.getNeighborhoodFromCoordinates(context, lat, lon));
         return dT.getNeighborhoodFromCoordinates(context, lat, lon);
+    }
+
+    public void updateImageDetails(ArrayList<String> imagePaths, int newPosition) {
+        this.position = newPosition;
+        updateUI(); // Update the UI with new position details
+    }
+
+    private void updateUI() {
+        if (getActivity() != null) {
+            area.setText(getLocality(getActivity(), lat, lon));
+            date.setText(getDate(imagePaths));
+            address.setText(getAddress(getActivity(), imagePaths));
+        }
     }
 }
