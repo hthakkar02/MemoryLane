@@ -85,13 +85,107 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         modeSelector.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.globalMode) {
                 mode = 2;
+                createMarkers();
             } else if (checkedId == R.id.friendsMode) {
                 mode = 1;
+                createMarkers();
             } else if (checkedId == R.id.privateMode) {
                 mode = 0;
+                createMarkers();
             }
         });
         return rootView;
+    }
+
+    private void createMarkers() {
+        dataTest dT = dataTest.getInstance();
+        mMap.clear();
+        // Log the bounds of the visible region
+        LatLngBounds visibleBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+        //Min Lat
+        geoBounds[0] = visibleBounds.southwest.latitude;
+        //Max Lat
+        geoBounds[1] = visibleBounds.northeast.latitude;
+        //Min Lon
+        geoBounds[2] = visibleBounds.southwest.longitude;
+        //Max Lon
+        geoBounds[3] = visibleBounds.northeast.longitude;
+
+        Log.d("MapClick", "Visible Region - MinLat: " + geoBounds[0] +
+                ", MaxLat: " + geoBounds[1] +
+                ", MinLong: " + geoBounds[2] +
+                ", MaxLong: " + geoBounds[3]);
+
+        if (mode == 0) {
+            dT.loadImagesFromUser(geoBounds, getActivity(), new dataTest.OnImagesLoadedListener() {
+                @Override
+                public void onImagesLoaded(ArrayList<String> imagePaths) {
+                    Log.d("ArrayList", imagePaths.toString());
+                }
+
+                @Override
+                public void onCentroidsCalculated(Map<String, LatLng> centroids) {
+                    for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
+                        String groupKey = entry.getKey(); // The group key
+                        LatLng centroid = entry.getValue(); // The centroid LatLng
+
+                        // Create a marker at the centroid
+                        Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
+
+                        // Set the group key as the tag of the marker
+                        marker.setTag(groupKey);
+                    }
+                }
+            }, key -> {
+                // Handle individual image download callback
+            });
+        } else if (mode == 1) {
+            dT.loadFriendImages(geoBounds, getActivity(), new dataTest.OnImagesLoadedListener() {
+                @Override
+                public void onImagesLoaded(ArrayList<String> imagePaths) {
+                    Log.d("ArrayList", imagePaths.toString());
+                }
+
+                @Override
+                public void onCentroidsCalculated(Map<String, LatLng> centroids) {
+                    for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
+                        String groupKey = entry.getKey(); // The group key
+                        LatLng centroid = entry.getValue(); // The centroid LatLng
+
+                        // Create a marker at the centroid
+                        Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
+
+                        // Set the group key as the tag of the marker
+                        marker.setTag(groupKey);
+                    }
+                }
+            }, key -> {
+                // Handle individual image download callback
+            });
+        } else {
+            dT.loadGlobalImages(geoBounds, new dataTest.OnImagesLoadedListener() {
+                @Override
+                public void onImagesLoaded(ArrayList<String> imagePaths) {
+                    Log.d("ArrayList", imagePaths.toString());
+                }
+
+                @Override
+                public void onCentroidsCalculated(Map<String, LatLng> centroids) {
+                    for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
+                        String groupKey = entry.getKey(); // The group key
+                        LatLng centroid = entry.getValue(); // The centroid LatLng
+
+                        // Create a marker at the centroid
+                        Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
+
+                        // Set the group key as the tag of the marker
+                        marker.setTag(groupKey);
+                    }
+                }
+            }, key -> {
+                // Handle individual image download callback
+            });
+        }
     }
 
     private void toggleAppGuideOverlay() {
@@ -123,95 +217,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                mMap.clear();
-                // Log the bounds of the visible region
-                LatLngBounds visibleBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
-                //Min Lat
-                geoBounds[0] = visibleBounds.southwest.latitude;
-                //Max Lat
-                geoBounds[1] = visibleBounds.northeast.latitude;
-                //Min Lon
-                geoBounds[2] = visibleBounds.southwest.longitude;
-                //Max Lon
-                geoBounds[3] = visibleBounds.northeast.longitude;
-
-                Log.d("MapClick", "Visible Region - MinLat: " + geoBounds[0] +
-                        ", MaxLat: " + geoBounds[1] +
-                        ", MinLong: " + geoBounds[2] +
-                        ", MaxLong: " + geoBounds[3]);
-
-                if (mode == 0) {
-                    dT.loadImagesFromUser(geoBounds, getActivity(), new dataTest.OnImagesLoadedListener() {
-                        @Override
-                        public void onImagesLoaded(ArrayList<String> imagePaths) {
-                            Log.d("ArrayList", imagePaths.toString());
-                        }
-
-                        @Override
-                        public void onCentroidsCalculated(Map<String, LatLng> centroids) {
-                            for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
-                                String groupKey = entry.getKey(); // The group key
-                                LatLng centroid = entry.getValue(); // The centroid LatLng
-
-                                // Create a marker at the centroid
-                                Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
-
-                                // Set the group key as the tag of the marker
-                                marker.setTag(groupKey);
-                            }
-                        }
-                    }, key -> {
-                        // Handle individual image download callback
-                    });
-                }
-                else if (mode == 1) {
-                    dT.loadFriendImages(geoBounds, getActivity(), new dataTest.OnImagesLoadedListener() {
-                        @Override
-                        public void onImagesLoaded(ArrayList<String> imagePaths) {
-                            Log.d("ArrayList", imagePaths.toString());
-                        }
-
-                        @Override
-                        public void onCentroidsCalculated(Map<String, LatLng> centroids) {
-                            for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
-                                String groupKey = entry.getKey(); // The group key
-                                LatLng centroid = entry.getValue(); // The centroid LatLng
-
-                                // Create a marker at the centroid
-                                Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
-
-                                // Set the group key as the tag of the marker
-                                marker.setTag(groupKey);
-                            }
-                        }
-                    }, key -> {
-                        // Handle individual image download callback
-                    });
-                }
-                else {
-                    dT.loadGlobalImages(geoBounds, new dataTest.OnImagesLoadedListener() {
-                        @Override
-                        public void onImagesLoaded(ArrayList<String> imagePaths) {
-                            Log.d("ArrayList", imagePaths.toString());
-                        }
-
-                        @Override
-                        public void onCentroidsCalculated(Map<String, LatLng> centroids) {
-                            for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
-                                String groupKey = entry.getKey(); // The group key
-                                LatLng centroid = entry.getValue(); // The centroid LatLng
-
-                                // Create a marker at the centroid
-                                Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
-
-                                // Set the group key as the tag of the marker
-                                marker.setTag(groupKey);
-                            }
-                        }
-                    }, key -> {
-                        // Handle individual image download callback
-                    });
-                }
+             createMarkers();
             }
         });
 
