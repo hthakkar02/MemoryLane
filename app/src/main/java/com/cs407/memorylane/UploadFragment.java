@@ -1,13 +1,10 @@
 package com.cs407.memorylane;
 
-import android.app.Activity;
 import android.content.ContentUris;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.ExifInterface;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -124,12 +121,14 @@ public class UploadFragment extends Fragment {
         return filePath != null ? new File(filePath) : null;
     }
 
-    private void extractLocationFromImage(Uri imageUri) {
+    private void extractLocationDateFromImage(Uri imageUri) {
         try (InputStream inputStream = getContext().getContentResolver().openInputStream(imageUri)) {
             if (inputStream != null) {
                 ExifInterface exifInterface = new ExifInterface(inputStream);
                 float[] latLong = new float[2];
                 boolean hasLatLong = exifInterface.getLatLong(latLong);
+                String dateTime = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
+                
                 if (hasLatLong) {
                     // Use latitude and longitude as needed
                     float latitude = latLong[0];
@@ -137,6 +136,13 @@ public class UploadFragment extends Fragment {
                     Log.d("ImageLocation", "Latitude: " + latitude + ", Longitude: " + longitude);
                 } else {
                     Log.d("ImageLocation", "No location data available for this image");
+                }
+
+                // Log date data
+                if (dateTime != null) {
+                    Log.d("ImageInfo", "Date taken: " + dateTime);
+                } else {
+                    Log.d("ImageInfo", "No date data available for this image");
                 }
             }
         } catch (IOException e) {
@@ -162,7 +168,7 @@ public class UploadFragment extends Fragment {
                 while (cursor.moveToNext()) {
                     long id = cursor.getLong(idColumn);
                     Uri contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
-                    extractLocationFromImage(contentUri);
+                    extractLocationDateFromImage(contentUri);
                     imageUris.add(contentUri);
                 }
             } else {
