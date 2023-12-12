@@ -91,10 +91,8 @@ public class SlideshowInfoFragment extends Fragment {
 
         address = view.findViewById(R.id.address);
         address.setText(getAddress(getActivity(), imagePaths));
-
         return view;
     }
-
     private String getAddress(Context context, ArrayList<String> imagePaths) {
         dataTest dT = dataTest.getInstance();
         GeoPoint location = dT.getImageLocation(imagePaths.get(position));

@@ -23,6 +23,7 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -109,12 +110,47 @@ public class authTests extends AppCompatActivity {
 
 
     /**
+     * Method dedicated to checking if a username is unique
+     * @param username
+     */
+    interface UsernameCheckCallback {
+        void onUsernameChecked(boolean isUnique);
+    }
+
+    protected void checkUsernameUniqueness(String username, UsernameCheckCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference userDataCollection = db.collection("User Data");
+
+        // Check if the provided username already exists
+        Query query = userDataCollection.whereEqualTo("Username", username);
+        query.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                if (!task.getResult().isEmpty()) {
+                    // Username already exists
+                    callback.onUsernameChecked(false);
+                } else {
+                    // Username is unique
+                    callback.onUsernameChecked(true);
+                }
+            } else {
+                // Handle the query failure for checking existing username
+                Log.e("Check Username", "Error checking username existence: " + task.getException().getMessage());
+                // Pass false indicating non-uniqueness due to query failure
+                callback.onUsernameChecked(false);
+            }
+        });
+    }
+
+
+
+    /**
      * Sign up user via email and password
      *
      * @param email
      * @param password
+     * @param username
      */
-    protected CompletableFuture<Boolean> signUpUser(String email, String password) {
+    protected CompletableFuture<Boolean> signUpUser(String email, String password, String username) {
         mAuth = FirebaseAuth.getInstance();
         CompletableFuture<Boolean> signUpFuture = new CompletableFuture<>();
 
@@ -153,6 +189,8 @@ public class authTests extends AppCompatActivity {
         newUser.put("Username", username);
         List<String> friendsList = new ArrayList<>();
         newUser.put("Friends", friendsList);
+        List<String> friendsRequestList = new ArrayList<>();
+        newUser.put("Friend Request", friendsRequestList);
 
         // Add the new document to the "User Data" collection
         collectionReference.add(newUser)

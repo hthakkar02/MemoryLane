@@ -13,8 +13,6 @@ import android.location.Geocoder;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.util.LruCache;
 import android.widget.Toast;
@@ -31,20 +29,13 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.StorageTask;
-import com.google.firebase.storage.UploadTask;
 
-import org.w3c.dom.Document;
-
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.lang.ref.Reference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -56,6 +47,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class dataTest extends AppCompatActivity {
@@ -79,6 +71,203 @@ public class dataTest extends AppCompatActivity {
         setContentView(R.layout.activity_data_test);
 
     }
+
+
+    /**
+     * This method convert the userID to the username
+     * @param userID
+     * @param listener
+     */
+    public void userIDToUsername(String userID, OnUsernameRetrievedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userDocRef = db.collection("User Data").document(userID);
+
+        userDocRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                if (task.getResult() != null && task.getResult().exists()) {
+                    String username = task.getResult().getString("Username");
+                    if (username != null) {
+                        listener.onUsernameRetrieved(username);
+                    } else {
+                        listener.onUsernameRetrievalFailure("Username field not found");
+                    }
+                } else {
+                    listener.onUsernameRetrievalFailure("No such document");
+                }
+            } else {
+                listener.onUsernameRetrievalFailure("Error: " + task.getException().getMessage());
+            }
+        });
+    }
+
+    // Listener interface for username retrieval
+    public interface OnUsernameRetrievedListener {
+        void onUsernameRetrieved(String username);
+
+        void onUsernameRetrievalFailure(String errorMessage);
+    }
+
+    /**
+     * This method rejects a friend request by removing the friend from the friend requests array.
+     *
+     * @param userID users user ID
+     * @param friendUserID friends user ID
+     */
+    protected void rejectFriendRequest(String userID, String friendUserID){
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        DocumentReference userDocument = db.collection("User Data").document(userID);
+
+        // Update the array field "Friend" by removing the specified friendUserID
+        userDocument.update("Friend Request", FieldValue.arrayRemove(friendUserID))
+                .addOnSuccessListener(aVoid -> {
+                    // Deletion successful
+                    Log.d("Delete Friend Succ", "Deleted friend request successfully");
+                })
+                .addOnFailureListener(e -> {
+                    // Deletion failed
+                    Log.e("Delete Friend Fail", "Error deleting friend request: " + e.getMessage());
+                });
+    }
+
+
+    /**
+     * This method deletes ur friend.
+     * Invoke when you are deleting a friend from your Friends.
+     * @param userID users user ID
+     * @param friendUserID friends user ID
+     */
+    protected void deleteFriend(String userID, String friendUserID) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        DocumentReference userDocument = db.collection("User Data").document(userID);
+
+        // Update the array field "Friend" by removing the specified friendUserID
+        userDocument.update("Friends", FieldValue.arrayRemove(friendUserID))
+                .addOnSuccessListener(aVoid -> {
+                    // Deletion successful
+                    Log.d("Delete Friend Succ", "Friend deleted successfully");
+                })
+                .addOnFailureListener(e -> {
+                    // Deletion failed
+                    Log.e("Delete Friend Fail", "Error deleting friend: " + e.getMessage());
+                });
+    }
+
+
+
+    /**
+     * This method handles friend requests being submitted.
+     * 1) Removes the friends userID from friend requests
+     * 2) Adds friends userID to Friends
+     * 3) Adds the friends userID in the Friends field
+     *
+     * @param userID is the userID of the current user
+     * @param friendsUserID is the userID of the user who's request was accepted
+     */
+    protected void onFriendRequestAccepted(String userID, String friendsUserID) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference userDataCollection = db.collection("User Data");
+
+        // Remove friendsUserID from "Friend Request" field of userID document
+        DocumentReference userDocument = userDataCollection.document(userID);
+        userDocument.update("Friend Request", FieldValue.arrayRemove(friendsUserID))
+                .addOnSuccessListener(aVoid -> {
+                    // Add friendsUserID to "Friends" field of userID document
+                    userDocument.update("Friends", FieldValue.arrayUnion(friendsUserID))
+                            .addOnSuccessListener(aVoid1 -> {
+                                // Add userID to "Friends" field of friendsUserID document
+                                DocumentReference friendsUserDocument = userDataCollection.document(friendsUserID);
+                                friendsUserDocument.update("Friends", FieldValue.arrayUnion(userID))
+                                        .addOnSuccessListener(aVoid2 -> Log.d("Friend Request", "Friend request accepted successfully"))
+                                        .addOnFailureListener(e -> Log.e("Friend Request", "Failed to add userID to friendsUserID's Friends: " + e.getMessage()));
+                            })
+                            .addOnFailureListener(e -> Log.e("Friend Request", "Failed to add friendsUserID to userID's Friends: " + e.getMessage()));
+                })
+                .addOnFailureListener(e -> Log.e("Friend Request", "Failed to remove friendsUserID from userID's Friend Request: " + e.getMessage()));
+    }
+
+
+
+    interface OnFriendRequestsRetrievedListener {
+        void onFriendRequestsRetrieved(ArrayList<String> friendRequests);
+
+        void onFriendRequestsRetrievalFailure(String errorMessage);
+    }
+
+    protected void retrieveFriendRequestsArray(String userID, OnFriendRequestsRetrievedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        CollectionReference userDataCollection = db.collection("User Data");
+        DocumentReference userDocument = userDataCollection.document(userID);
+
+        userDocument.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    ArrayList<String> friendRequestsList = (ArrayList<String>) document.get("Friend Request");
+                    Log.d("Friend Request Array Test", "Array " + friendRequestsList);
+
+                    if (listener != null) {
+                        listener.onFriendRequestsRetrieved(friendRequestsList);
+                    }
+                } else {
+                    Log.d("Firestore", "No such document");
+                    if (listener != null) {
+                        listener.onFriendRequestsRetrievalFailure("No such document");
+                    }
+                }
+            } else {
+                Log.e("Firestore", "Error getting user data: ", task.getException());
+                if (listener != null) {
+                    listener.onFriendRequestsRetrievalFailure(task.getException().getMessage());
+                }
+            }
+        });
+    }
+
+
+
+
+    /**
+     * This method retrieves the friends list associated with a userID. Uses a callback for async operation
+     * @param userID
+     * @returns an array of the users friends
+     */
+    protected void retrieveFriendsArray(String userID, OnFriendsListRetrievedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        CollectionReference userDataCollection = db.collection("User Data");
+        DocumentReference userDocument = userDataCollection.document(userID);
+
+        userDocument.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    ArrayList<String> friendsList = (ArrayList<String>) document.get("Friends");
+                    Log.d("Profile Friends Array Test", "Array " + friendsList);
+
+                    if (listener != null) {
+                        listener.onFriendsListRetrieved(friendsList);
+                    }
+                } else {
+                    Log.d("Firestore", "No such document");
+                }
+            } else {
+                Log.e("Firestore", "Error getting user data: ", task.getException());
+                if (listener != null) {
+                    listener.onFriendsListRetrievalFailure(task.getException().getMessage());
+                }
+            }
+        });
+    }
+
+    // Define an interface to handle callbacks
+    public interface OnFriendsListRetrievedListener {
+        void onFriendsListRetrieved(ArrayList<String> friendsList);
+        void onFriendsListRetrievalFailure(String errorMessage);
+    }
+
 
     // Example LruCache initialization in your activity or fragment
     int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
@@ -284,7 +473,6 @@ public class dataTest extends AppCompatActivity {
         });
     }
 
-
     protected void loadGlobalImages(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         imageLocations = new HashMap<>();
@@ -307,9 +495,30 @@ public class dataTest extends AppCompatActivity {
                             String path = document.getString("Path");
                             GeoPoint location = document.getGeoPoint("Location");
                             String date = document.getString("Date");
+
                             int orientation = document.getLong("Orientation").intValue();
 
                             imageOrientations.put(path, orientation);
+
+
+                            //set a username equal to the callback from userIDToUsername
+                            final String[] daUsername = {""};
+                            userIDToUsername("userID_here", new dataTest.OnUsernameRetrievedListener() {
+                                @Override
+                                public void onUsernameRetrieved(String username) {
+                                    // Handle the retrieved username here
+                                    Log.d("Username retrieved:", username);
+                                    daUsername[0] = username;
+                                }
+
+                                @Override
+                                public void onUsernameRetrievalFailure(String errorMessage) {
+                                    // Handle the retrieval failure here
+                                    Log.e("Username retrieval failed:", errorMessage);
+                                }
+                            });
+
+                            //username will be stored in daUsername[0]
 
                             if (location != null) {
                                 imageLocations.put(path, location); // Store image location
