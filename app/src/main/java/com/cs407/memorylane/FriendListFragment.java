@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FriendListFragment extends Fragment {
 
@@ -81,42 +82,37 @@ public class FriendListFragment extends Fragment {
             public void onFriendsListRetrieved(ArrayList<String> friendsList) {
                 ArrayList<String> usernamesList = new ArrayList<>();
 
+                // Counter to keep track of the number of retrieved usernames
+                AtomicInteger counter = new AtomicInteger(0);
 
                 // Handle retrieved friends list
                 for (String friend : friendsList) {
                     Log.d("Friend", friend);
 
                     dataTest.userIDToUsername(friend, new dataTest.OnUsernameRetrievedListener() {
-
                         @Override
                         public void onUsernameRetrieved(String username) {
                             usernamesList.add(username);
                             Log.d("Username of Friend:", username);
+
+                            // Increment the counter after each username retrieval
+                            int count = counter.incrementAndGet();
+
+                            // If all usernames are retrieved, update the adapter
+                            if (count == friendsList.size()) {
+                                friendAdapter.clear();
+                                friendAdapter.addAll(usernamesList);
+                                friendAdapter.notifyDataSetChanged();
+                            }
                         }
 
                         @Override
                         public void onUsernameRetrievalFailure(String errorMessage) {
                             Log.d("Username retrieval failed: ", errorMessage);
-                            String username = "Manoj2";
-                            //adapter.addData(userID, username);
-                            //Log.d("Username retrieval sent: ", username);
-
-
+                            // You might handle retrieval failure here if needed
                         }
                     });
-
-
                 }
-
-                friendAdapter.clear();
-
-                //go through friends_list and change each userID to username
-
-
-                friendAdapter.addAll(usernamesList);
-
-                // Notify the adapter that the data has changed
-                friendAdapter.notifyDataSetChanged();
             }
 
             @Override
