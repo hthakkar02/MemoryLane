@@ -141,9 +141,20 @@ public class dataTest extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         DocumentReference userDocument = db.collection("User Data").document(userID);
+        DocumentReference FriendUserDocument = db.collection("User Data").document(friendUserID);
+
 
         // Update the array field "Friend" by removing the specified friendUserID
         userDocument.update("Friends", FieldValue.arrayRemove(friendUserID))
+                .addOnSuccessListener(aVoid -> {
+                    // Deletion successful
+                    Log.d("Delete Friend Succ", "Friend deleted successfully");
+                })
+                .addOnFailureListener(e -> {
+                    // Deletion failed
+                    Log.e("Delete Friend Fail", "Error deleting friend: " + e.getMessage());
+                });
+        FriendUserDocument.update("Friends", FieldValue.arrayRemove(userID))
                 .addOnSuccessListener(aVoid -> {
                     // Deletion successful
                     Log.d("Delete Friend Succ", "Friend deleted successfully");
