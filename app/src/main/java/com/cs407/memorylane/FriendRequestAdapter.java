@@ -62,7 +62,7 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
         String username = usernames.get(position);
 
         // Usage of userIDToUsername method
-        dataTest dataTest = new dataTest();
+        dataTest dT = dataTest.getInstance();
 
 
         // Assuming the friend request string contains the username
