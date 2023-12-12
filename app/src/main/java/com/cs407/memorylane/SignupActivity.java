@@ -1,5 +1,8 @@
 package com.cs407.memorylane;
 
+import static com.google.android.material.internal.ContextUtils.getActivity;
+import static java.security.AccessController.getContext;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -10,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -78,50 +82,65 @@ public class SignupActivity extends AppCompatActivity {
 
                 authTests authTests = new authTests();
 
-                authTests.signUpUser(email, password)
-                        .thenAccept(isSignUpSuccessful -> {
-                            if (isSignUpSuccessful) {
-                                authTests.createNewUserDuringSignUp(username, email);
+                authTests.checkUsernameUniqueness(username, isUnique -> {
+                    if (isUnique) {
+                        // The username is unique
+                        // Perform actions for a unique username
 
-                                {
-                                    // Query Firestore for matching email
-                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
-                                    CollectionReference userData = db.collection("User Data");
+                        authTests.signUpUser(email, password, username)
+                                .thenAccept(isSignUpSuccessful -> {
+                                    if (isSignUpSuccessful) {
+                                        authTests.createNewUserDuringSignUp(username, email);
 
-                                    userData.whereEqualTo("Email", email).get()
-                                            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                                @Override
-                                                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                                    if (task.isSuccessful() && task.getResult() != null) {
-                                                        for (DocumentSnapshot document : task.getResult().getDocuments()) {
-                                                            String userDocId = document.getId();
-                                                            Log.d("Document ID", userDocId);
+                                        {
+                                            // Query Firestore for matching email
+                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                                            CollectionReference userData = db.collection("User Data");
 
-                                                            // Saves user data to shared preferences till app terminates
-                                                            SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
-                                                            SharedPreferences.Editor editor = preferences.edit();
-                                                            editor.putString("userID", document.getId());
-                                                            editor.apply();
-                                                            Log.d("User Document ID saved to preferences", userDocId);
+                                            userData.whereEqualTo("Email", email).get()
+                                                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                                        @Override
+                                                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                                            if (task.isSuccessful() && task.getResult() != null) {
+                                                                for (DocumentSnapshot document : task.getResult().getDocuments()) {
+                                                                    String userDocId = document.getId();
+                                                                    Log.d("Document ID", userDocId);
+
+                                                                    // Saves user data to shared preferences till app terminates
+                                                                    SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
+                                                                    SharedPreferences.Editor editor = preferences.edit();
+                                                                    editor.putString("userID", document.getId());
+                                                                    editor.apply();
+                                                                    Log.d("User Document ID saved to preferences", userDocId);
+                                                                }
+                                                            }
                                                         }
-                                                    }
-                                                }
-                                            });
+                                                    });
 
-                                    // Continue with your existing code...
-                                    SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
-                                    String storedData = preferences.getString("key", "Default value if key not found");
+                                            // Continue with your existing code...
+                                            SharedPreferences preferences = getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS);
+                                            String storedData = preferences.getString("key", "Default value if key not found");
 
-                                    startActivity(intent);
-                                    finish();
-                                }
+                                            startActivity(intent);
+                                            finish();
+                                        }
 
-                                startActivity(intent);
-                                finish();
-                            } else {
-                                Log.e("User Sign Up Error", "Error during sign-up");
-                            }
-                        });
+                                        startActivity(intent);
+                                        finish();
+                                    } else {
+                                        Log.e("User Sign Up Error", "Error during sign-up");
+                                    }
+                                });
+
+                    } else {
+                        // The username already exists
+                        // Perform actions for a non-unique username
+                        Log.e("username not unique", "username not unique");
+                        //Toast.makeText(getActivity().getApplicationContext(), "Username Taken!", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+
 
             }
         });
