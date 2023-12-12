@@ -22,6 +22,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     }
     private OnFriendRequestClickListener listener;
 
+
     // Constructor
     public UserAdapter(List<String> userList, OnFriendRequestClickListener listener) {
         this.userList = userList;
