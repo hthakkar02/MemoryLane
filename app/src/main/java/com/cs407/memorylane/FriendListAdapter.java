@@ -9,6 +9,11 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 import java.util.List;
 
 public class FriendListAdapter extends ArrayAdapter<String> {
@@ -42,12 +47,32 @@ public class FriendListAdapter extends ArrayAdapter<String> {
 
     protected void deleteFriend(String friendUsername) {
 
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference userDataCollection = db.collection("User Data"); // Update with your actual collection name
+        Query query = userDataCollection.whereEqualTo("Username", friendUsername);
 
-        //String friendUserID = convertUsernameToUserID(friendUsername);
-        dataTest.getInstance().deleteFriend(userID, friendUsername);
-        // Optionally, remove the friend from the adapter and refresh the list
-        remove(friendUsername);
-        notifyDataSetChanged();
+        query.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String documentId = document.getId();
+                    // Do something with the document ID (e.g., print or use it as needed)
+                    Log.d("Document ID for deletion", documentId);
+
+                    // Perform the deletion here, inside the completion block
+                    dataTest.getInstance().deleteFriend(userID, documentId);
+
+                    // Optionally, remove the friend from the adapter and refresh the list
+                    remove(friendUsername);
+                    notifyDataSetChanged();
+                }
+            } else {
+                // Handle errors
+                Exception exception = task.getException();
+                if (exception != null) {
+                    exception.printStackTrace();
+                }
+            }
+        });
     }
 
 }
