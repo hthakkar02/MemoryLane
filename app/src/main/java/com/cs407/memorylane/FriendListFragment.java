@@ -34,7 +34,7 @@ public class FriendListFragment extends Fragment {
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE | Context.MODE_MULTI_PROCESS);
 
         userID = sharedPreferences.getString("userID", "user not logged in");
-        String username = "";
+        //String username = "";
 
 
 
@@ -65,6 +65,7 @@ public class FriendListFragment extends Fragment {
             transaction.commit();
         });
 
+        //Log.d("Username of Friend:", username);
 
         retrieveFriends();
 
@@ -80,6 +81,8 @@ public class FriendListFragment extends Fragment {
             @Override
             public void onFriendsListRetrieved(ArrayList<String> friendsList) {
                 ArrayList<String> usernamesList = new ArrayList<>();
+                final int[] asyncTasksCompleted = {0};
+
 
 
                 // Handle retrieved friends list
@@ -91,17 +94,14 @@ public class FriendListFragment extends Fragment {
                         @Override
                         public void onUsernameRetrieved(String username) {
                             usernamesList.add(username);
+                            asyncTasksCompleted[0]++;
                             Log.d("Username of Friend:", username);
                         }
 
                         @Override
                         public void onUsernameRetrievalFailure(String errorMessage) {
                             Log.d("Username retrieval failed: ", errorMessage);
-                            String username = "Manoj2";
-                            //adapter.addData(userID, username);
-                            //Log.d("Username retrieval sent: ", username);
-
-
+                            asyncTasksCompleted[0]++;
                         }
                     });
 
