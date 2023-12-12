@@ -1,5 +1,7 @@
 package com.cs407.memorylane;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -40,9 +42,8 @@ public class FriendRequestFragment extends Fragment {
         });
 
 
-        fetchFriendRequestsForUser("ADsMGJPvOJdyzLQJdz0X");
-
-
+        String userID = getContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).getString("userID", "User not logged in");
+        fetchFriendRequestsForUser(userID);
         handleFriendRequestAcceptance();
 
 
