@@ -56,7 +56,7 @@ public class dataTest extends AppCompatActivity {
         userDocRef.get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 if (task.getResult() != null && task.getResult().exists()) {
-                    String username = task.getResult().getString("username");
+                    String username = task.getResult().getString("Username");
                     if (username != null) {
                         listener.onUsernameRetrieved(username);
                     } else {

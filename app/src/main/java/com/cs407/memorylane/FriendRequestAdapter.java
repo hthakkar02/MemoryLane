@@ -1,5 +1,6 @@
 package com.cs407.memorylane;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,7 +55,7 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
             @Override
             public void onUsernameRetrieved(String username) {
                 // Handle retrieved username
-                System.out.println("Retrieved Username: " + username);
+                Log.d("Retrieved Username from adapter: " , username);
 
                 // Assuming the friend request string contains the username
                 holder.usernameTextView.setText(username);
