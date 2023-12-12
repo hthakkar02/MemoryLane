@@ -72,7 +72,7 @@ public class UserProfileFragment extends Fragment {
 
 
     public void setProfileInfo() {
-        dataTest dT = new dataTest();
+        dataTest dT = dataTest.getInstance();
         dT.retrieveUserInfo(userID, new dataTest.UserInfoCallback() {
             @Override
             public void onUserInfoRetrieved(ArrayList<String> userInfo) {

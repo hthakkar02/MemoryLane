@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,6 +17,11 @@ import android.util.LruCache;
 import android.widget.Toast;
 
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.Tasks;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -27,14 +34,34 @@ import com.google.firebase.storage.StorageReference;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import java.lang.ref.Reference;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class dataTest extends AppCompatActivity {
+
+    private static dataTest instance;
+
+    // Private constructor to prevent instantiation
+    private dataTest() {}
+
+    // Static method to get the single instance of the class
+    public static dataTest getInstance() {
+        if (instance == null) {
+            instance = new dataTest();
+        }
+        return instance;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -245,12 +272,47 @@ public class dataTest extends AppCompatActivity {
     int cacheSize = maxMemory / 8;
     LruCache<String, Bitmap> imageCache = new LruCache<>(cacheSize);
 
+    private Map<String, List<String>> imageGroups = new HashMap<>();
+
+    // Map to store image dates
+    private HashMap<String, String> imageDates = new HashMap<>();
+
+    // Map to store image locations
+    private HashMap<String, GeoPoint> imageLocations = new HashMap<>();
+
+    // Method to retrieve the location for an image
+    public GeoPoint getImageLocation(String imagePath) {
+        return imageLocations.get(imagePath);
+    }
+
+    // Method to store the location for an image
+    public void setImageLocation(String imagePath, GeoPoint location) {
+        imageLocations.put(imagePath, location);
+    }
+
+
+    // Method to retrieve the date for an image
+    public String getImageDate(String imagePath) {
+        return imageDates.get(imagePath);
+    }
+
+    // Method to store the date for an image
+    public void setImageDate(String imagePath, String date) {
+        imageDates.put(imagePath, date);
+    }
+
     // Function to add image to cache
     protected void addBitmapToCache(String key, Bitmap bitmap) {
         if (getBitmapFromCache(key) == null) {
             imageCache.put(key, bitmap);
         }
     }
+
+    public List<String> getImagesForGroup(String groupKey) {
+        return imageGroups.getOrDefault(groupKey, new ArrayList<>());
+    }
+
+
 
     // Function to retrieve image from cache
     protected Bitmap getBitmapFromCache(String key) {
@@ -270,7 +332,7 @@ public class dataTest extends AppCompatActivity {
             // Cache the image
             addBitmapToCache(imagePath, bitmap);
 
-            Log.d("ImageCache", "Image cached successfully");
+            Log.d("ImageCache", "Image cached successfully"+imagePath);
             callback.onImageDownloaded(imagePath);
         }).addOnFailureListener(exception -> {
             // Handle errors
@@ -303,47 +365,141 @@ public class dataTest extends AppCompatActivity {
         });
     }
 
-
-
-//    protected List<String> searchUserByUsernameSubstring(String substring) {
-//        FirebaseFirestore db = FirebaseFirestore.getInstance();
-//        CollectionReference userDataCollection = db.collection("User Data");
-//
-//        try {
-//            QuerySnapshot querySnapshot = Tasks.await(
-//                    userDataCollection.whereArrayContains("Username", substring).get()
-//            );
-//
-//            List<String> matchingUsernames = new ArrayList<>();
-//
-//            for (QueryDocumentSnapshot document : querySnapshot) {
-//                // Assuming "Username" is the field in your document
-//                String foundUsername = document.getString("Username");
-//                if (foundUsername != null) {
-//                    Log.d("USERNAME FOUND", "Here is the username that matched: "+foundUsername);
-//                    matchingUsernames.add(foundUsername);
-//                }
-//            }
-//
-//            return matchingUsernames;
-//        } catch (Exception e) {
-//            // Handle exceptions here
-//            return new ArrayList<>();
-//        }
-//    }
-
     public interface OnImagesLoadedListener {
         void onImagesLoaded(ArrayList<String> imagePaths);
+        void onCentroidsCalculated(Map<String, LatLng> centroids);
     }
 
     public interface ImageDownloadedCallback {
         void onImageDownloaded(String key);
     }
 
-    protected void loadImagesFromUser(Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+    protected void loadFriendImages(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
+        DocumentReference ownerRef = db.collection("User Data").document(owner);
+        imageLocations = new HashMap<>();
+        imageDates = new HashMap<>();
+        imageGroups.clear();
+
+        ownerRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                List<String> friendList = (List<String>) documentSnapshot.get("Friends"); // replace "Friends" with the actual field name
+                if (friendList != null && !friendList.isEmpty()) {
+                    List<DocumentReference> friendRefs = friendList.stream()
+                            .map(friendId -> db.collection("User Data").document(friendId))
+                            .collect(Collectors.toList());
+                    db.collection("All Photos")
+                            .whereIn("Owner", friendRefs)
+                            .whereEqualTo("PrivacyLevel", "Friends Only")
+                            .get()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful() && task.getResult() != null) {
+                                    List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                                    if (documents.size() == 0) {
+                                        listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                                        return;
+                                    }
+
+                                    AtomicInteger completedDownloads = new AtomicInteger(0);
+                                    for (DocumentSnapshot document : documents) {
+                                        String path = document.getString("Path");
+                                        GeoPoint location = document.getGeoPoint("Location");
+                                        String date = document.getString("Date");
+
+                                        if (location != null) {
+                                            imageLocations.put(path, location); // Store image location
+                                            String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                            imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                                        }
+
+                                        if (date != null)
+                                            imageDates.put(path, date);
+
+                                        downloadImage(path, key -> {
+                                            imageDownloadedCallback.onImageDownloaded(key);
+                                            if (completedDownloads.incrementAndGet() == documents.size()) {
+                                                // All images have been downloaded and cached
+                                                listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                                Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                                listener.onCentroidsCalculated(centroids);
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    Log.d("ERRORING", "Error getting documents: ", task.getException());
+                                }
+                            });
+                } else {
+                    listener.onImagesLoaded(new ArrayList<>()); // No friends to load images from
+                }
+            } else {
+                listener.onImagesLoaded(new ArrayList<>()); // Owner document does not exist
+            }
+        }).addOnFailureListener(e -> {
+            Log.d("ERRORING", "Error getting owner document: ", e);
+        });
+    }
+
+
+    protected void loadGlobalImages(double[] geoBounds, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        imageLocations = new HashMap<>();
+        imageDates = new HashMap<>();
+        imageGroups.clear();
+
+        db.collection("All Photos")
+                .whereEqualTo("PrivacyLevel", "Global")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<DocumentSnapshot> documents = task.getResult().getDocuments();
+                        if (documents.size() == 0) {
+                            listener.onImagesLoaded(new ArrayList<>()); // No images to load
+                            return;
+                        }
+
+                        AtomicInteger completedDownloads = new AtomicInteger(0);
+                        for (DocumentSnapshot document : documents) {
+                            String path = document.getString("Path");
+                            GeoPoint location = document.getGeoPoint("Location");
+                            String date = document.getString("Date");
+//                            String username = getUsernameFromRef(document.getDocumentReference("Owner"));
+
+                            if (location != null) {
+                                imageLocations.put(path, location); // Store image location
+                                String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                            }
+
+                            if (date != null)
+                                imageDates.put(path, date);
+
+                            downloadImage(path, key -> {
+                                imageDownloadedCallback.onImageDownloaded(key);
+                                if (completedDownloads.incrementAndGet() == documents.size()) {
+                                    // Call listeners after all images are processed
+                                    listener.onImagesLoaded(new ArrayList<>(imageCache.snapshot().keySet()));
+                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                    listener.onCentroidsCalculated(centroids);
+                                }
+                            });
+                        }
+                    } else {
+                        Log.d("ERRORING", "Error getting documents: ", task.getException());
+                    }
+                });
+    }
+
+
+    protected void loadImagesFromUser(double[] geoBounds, Context context, OnImagesLoadedListener listener, ImageDownloadedCallback imageDownloadedCallback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String owner = context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in");
         DocumentReference ownerRef = db.collection("User Data").document(owner); // Create a reference to the owner document
+        imageLocations = new HashMap<>();
+        imageDates = new HashMap<>();
+        imageGroups.clear();
+        // Map to store centroids of each group
 
         Log.d("STATUS", "Getting here");
 
@@ -361,6 +517,20 @@ public class dataTest extends AppCompatActivity {
                                 AtomicInteger completedDownloads = new AtomicInteger(0);
                                 for (DocumentSnapshot document : documents) {
                                     String path = document.getString("Path");
+                                    GeoPoint location = document.getGeoPoint("Location");
+                                    String date = document.getString("Date");
+
+                                    if (location != null) {
+                                        // Sort the image into the proper group based on location
+                                        imageLocations.put(path, location);
+                                        String groupKey = findGroupKeyForLocation(location, geoBounds);
+                                        imageGroups.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(path);
+                                    }
+
+
+                                    if (date != null)
+                                        imageDates.put(path, date);
+
                                     downloadImage(path, key -> {
                                         imageDownloadedCallback.onImageDownloaded(key);
                                         if (completedDownloads.incrementAndGet() == totalImages) {
@@ -369,10 +539,57 @@ public class dataTest extends AppCompatActivity {
                                         }
                                     });
                                 }
+
+//                                if (completedDownloads.get() == totalImages) {
+                                    // Calculate centroids here after all images are loaded
+                                    Map<String, LatLng> centroids = calculateCentroids(imageGroups, imageLocations);
+                                    listener.onCentroidsCalculated(centroids);
+
+
+//                                Log.d("Important Images:", ""+imageGroups.toString());
                             } else {
                         Log.d("ERRORING", "Error getting documents: ", task.getException());
                     }
                 });
+    }
+
+    private Map<String, LatLng> calculateCentroids(Map<String, List<String>> imageGroups, Map<String, GeoPoint> imageLocations) {
+        Map<String, LatLng> centroids = new HashMap<>();
+
+        // Iterate through each group
+        for (Map.Entry<String, List<String>> entry : imageGroups.entrySet()) {
+            String groupKey = entry.getKey();
+            List<String> imagePaths = entry.getValue();
+
+            double totalLat = 0.0;
+            double totalLng = 0.0;
+            int count = 0;
+
+            // Calculate the sum of latitudes and longitudes for the images in the group
+            for (String path : imagePaths) {
+                GeoPoint location = imageLocations.get(path);
+                if (location != null) {
+                    totalLat += location.getLatitude();
+                    totalLng += location.getLongitude();
+                    count++;
+                }
+            }
+
+            // Calculate the centroid for the group
+            if (count > 0) {
+                LatLng centroid = new LatLng(totalLat / count, totalLng / count);
+                centroids.put(groupKey, centroid);
+            }
+        }
+
+        return centroids;
+    }
+
+
+    private String findGroupKeyForLocation(GeoPoint location, double[] geoBounds) {
+        int latIndex = (int)((location.getLatitude() - geoBounds[0]) / ((geoBounds[1] - geoBounds[0]) / 10));
+        int lngIndex = (int)((location.getLongitude() - geoBounds[2]) / ((geoBounds[3] - geoBounds[2]) / 10));
+        return "Group_" + latIndex + "_" + lngIndex;
     }
 
 
@@ -540,7 +757,7 @@ public class dataTest extends AppCompatActivity {
     /**
      *
      */
-    protected void uploadLocalPhoto(Context context, Uri fileUri) {
+    protected void uploadLocalPhoto(Context context, Uri fileUri, String privacyLevel) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
@@ -553,7 +770,7 @@ public class dataTest extends AppCompatActivity {
                     imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                         String downloadUrl = uri.toString();
                         Log.d("FirebaseUpload", "Download URL: " + downloadUrl);
-                        addPhotoToCollection(context, "images/" + destinationFileName, fileUri);
+                        addPhotoToCollection(context, "images/" + destinationFileName, fileUri, privacyLevel);
                         // Toast message for successful upload
                         Toast.makeText(context, "Upload successful!", Toast.LENGTH_SHORT).show();
                     });
@@ -571,10 +788,11 @@ public class dataTest extends AppCompatActivity {
      * @param referencePath
      * @param fileUri
      */
-    protected void addPhotoToCollection(Context context, String referencePath, Uri fileUri) {
+    protected void addPhotoToCollection(Context context, String referencePath, Uri fileUri, String privacyLevel) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference collectionReference = db.collection("All Photos");
         GeoPoint location = null;
+        String imageDate = null;
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(fileUri); // 'uri' is the Uri of your image
             if (inputStream != null) {
@@ -586,6 +804,21 @@ public class dataTest extends AppCompatActivity {
                     float longitude = latLong[1];
                     // Use latitude and longitude as needed
                     location = new GeoPoint(latitude, longitude);
+
+                    imageDate = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
+                    if (imageDate != null && !imageDate.isEmpty()) {
+                        SimpleDateFormat originalFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.getDefault());
+                        SimpleDateFormat targetFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
+                        try {
+                            Date date = originalFormat.parse(imageDate);
+                            if (date != null) {
+                                imageDate = targetFormat.format(date);
+                            }
+                        } catch (ParseException e) {
+                            Log.e("Date Parsing", "Error parsing the date: " + imageDate, e);
+                        }
+                    }
+                    inputStream.close();
 
                 } else {
                     // No location information available
@@ -603,6 +836,13 @@ public class dataTest extends AppCompatActivity {
         newPhoto.put("Location", location);
         newPhoto.put("Owner", db.collection("User Data").document(context.getSharedPreferences("MyPrefs", MODE_PRIVATE | MODE_MULTI_PROCESS).getString("userID", "User not logged in")));
         newPhoto.put("Path", referencePath);
+        newPhoto.put("PrivacyLevel", privacyLevel);
+        if (imageDate != null) {
+            newPhoto.put("Date", imageDate); // Add the date to the photo document
+        }
+        else {
+            newPhoto.put("Date", "No Date Provided");
+        }
 
         collectionReference.add(newPhoto)
                 .addOnSuccessListener(documentReference -> {
@@ -613,6 +853,80 @@ public class dataTest extends AppCompatActivity {
                     // Handle failure
                     Log.e("Firestore", "Error adding document", e);
                 });
+    }
+    public String getStreetFromCoordinates(Context context, double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        String fullAddress = "";
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                fullAddress = formatFullAddress(address);
+            } else {
+                fullAddress = "No address found";
+            }
+        } catch (IOException e) {
+            Log.e("StreetConverter", "Error getting address from coordinates", e);
+        }
+
+        return fullAddress;
+    }
+
+    private String formatFullAddress(Address address) {
+        String addressname = "";
+        if (address != null) {
+            String streetNumber = address.getFeatureName(); // Often the street number
+            String streetName = address.getThoroughfare(); // Street name
+
+            if (streetNumber != null) {
+                addressname+=streetNumber;
+            }
+            if (streetNumber != null && streetName != null) {
+                addressname+= " ";
+            }
+            if (streetName != null) {
+                addressname+=streetName;
+            }
+            if (addressname.equals("")) {
+                return "Address not available";
+            }
+            return addressname;
+        }
+        return "Address not available";
+    }
+
+
+    public String getNeighborhoodFromCoordinates(Context context, double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        String neighborhoodName = "";
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+            if (addresses != null && addresses.size() > 0) {
+                Address address = addresses.get(0);
+
+                // Extract the neighborhood name
+                neighborhoodName = addressLocality(address);
+            } else {
+                neighborhoodName = "No neighborhood found";
+            }
+        } catch (IOException e) {
+            Log.e("NeighborhoodConverter", "Error getting neighborhood from coordinates", e);
+        }
+
+        return neighborhoodName;
+    }
+
+    private String addressLocality(Address address) {
+        Log.d("NEIGHBORHOOD", ""+address);
+        if (address != null && address.getLocality() != null) {
+            return address.getLocality();
+        } else {
+            return "Locality not available";
+        }
     }
 
 }

@@ -18,6 +18,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.RadioGroup;
+import android.widget.SeekBar;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -26,9 +28,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 
 public class MapsFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
@@ -39,6 +46,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     private FrameLayout appGuideOverlay;
     private final LatLng defaultLocation = new LatLng(-33.8523341, 151.2106085);
     private final float DEFAULT_ZOOM = 15;
+
+    private RadioGroup modeSelector;
+
+    private double geoBounds[] = new double[4];
+
+    private int mode = 0;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,6 +81,16 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         ImageButton btnUserProfile = rootView.findViewById(R.id.btnUserProfile);
         btnUserProfile.setOnClickListener(v -> navigateToUserProfile());
 
+        modeSelector = rootView.findViewById(R.id.modeSelector);
+        modeSelector.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.globalMode) {
+                mode = 2;
+            } else if (checkedId == R.id.friendsMode) {
+                mode = 1;
+            } else if (checkedId == R.id.privateMode) {
+                mode = 0;
+            }
+        });
         return rootView;
     }
 
@@ -95,8 +119,120 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
 
-        // Set the marker click listener
-        mMap.setOnMarkerClickListener(this);
+        dataTest dT = dataTest.getInstance();
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                mMap.clear();
+                // Log the bounds of the visible region
+                LatLngBounds visibleBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+                //Min Lat
+                geoBounds[0] = visibleBounds.southwest.latitude;
+                //Max Lat
+                geoBounds[1] = visibleBounds.northeast.latitude;
+                //Min Lon
+                geoBounds[2] = visibleBounds.southwest.longitude;
+                //Max Lon
+                geoBounds[3] = visibleBounds.northeast.longitude;
+
+                Log.d("MapClick", "Visible Region - MinLat: " + geoBounds[0] +
+                        ", MaxLat: " + geoBounds[1] +
+                        ", MinLong: " + geoBounds[2] +
+                        ", MaxLong: " + geoBounds[3]);
+
+                if (mode == 0) {
+                    dT.loadImagesFromUser(geoBounds, getActivity(), new dataTest.OnImagesLoadedListener() {
+                        @Override
+                        public void onImagesLoaded(ArrayList<String> imagePaths) {
+                            Log.d("ArrayList", imagePaths.toString());
+                        }
+
+                        @Override
+                        public void onCentroidsCalculated(Map<String, LatLng> centroids) {
+                            for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
+                                String groupKey = entry.getKey(); // The group key
+                                LatLng centroid = entry.getValue(); // The centroid LatLng
+
+                                // Create a marker at the centroid
+                                Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
+
+                                // Set the group key as the tag of the marker
+                                marker.setTag(groupKey);
+                            }
+                        }
+                    }, key -> {
+                        // Handle individual image download callback
+                    });
+                }
+                else if (mode == 1) {
+                    dT.loadFriendImages(geoBounds, getActivity(), new dataTest.OnImagesLoadedListener() {
+                        @Override
+                        public void onImagesLoaded(ArrayList<String> imagePaths) {
+                            Log.d("ArrayList", imagePaths.toString());
+                        }
+
+                        @Override
+                        public void onCentroidsCalculated(Map<String, LatLng> centroids) {
+                            for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
+                                String groupKey = entry.getKey(); // The group key
+                                LatLng centroid = entry.getValue(); // The centroid LatLng
+
+                                // Create a marker at the centroid
+                                Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
+
+                                // Set the group key as the tag of the marker
+                                marker.setTag(groupKey);
+                            }
+                        }
+                    }, key -> {
+                        // Handle individual image download callback
+                    });
+                }
+                else {
+                    dT.loadGlobalImages(geoBounds, new dataTest.OnImagesLoadedListener() {
+                        @Override
+                        public void onImagesLoaded(ArrayList<String> imagePaths) {
+                            Log.d("ArrayList", imagePaths.toString());
+                        }
+
+                        @Override
+                        public void onCentroidsCalculated(Map<String, LatLng> centroids) {
+                            for (Map.Entry<String, LatLng> entry : centroids.entrySet()) {
+                                String groupKey = entry.getKey(); // The group key
+                                LatLng centroid = entry.getValue(); // The centroid LatLng
+
+                                // Create a marker at the centroid
+                                Marker marker = mMap.addMarker(new MarkerOptions().position(centroid).title("Group: " + groupKey));
+
+                                // Set the group key as the tag of the marker
+                                marker.setTag(groupKey);
+                            }
+                        }
+                    }, key -> {
+                        // Handle individual image download callback
+                    });
+                }
+            }
+        });
+
+
+
+        mMap.setOnMarkerClickListener(marker -> {
+            Intent intent = new Intent(getActivity(), ImageSlideshowActivity.class);
+            String groupKey = (String) marker.getTag();
+            ArrayList<String> imagePathsForGroup = (ArrayList<String>) dT.getImagesForGroup(groupKey); // Get images for the group
+
+            intent.putExtra("GROUP_KEY", groupKey);
+            intent.putStringArrayListExtra("IMAGE_PATHS", imagePathsForGroup);
+
+            LatLng position = marker.getPosition();
+            intent.putExtra("LATITUDE", position.latitude);
+            intent.putExtra("LONGITUDE", position.longitude);
+
+            startActivity(intent);
+            return true;
+        });
+
     }
 
     public boolean onMarkerClick(Marker marker) {
@@ -134,9 +270,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
                         LatLng currentLatLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                         // Add a marker at the current location
-                        mMap.addMarker(new MarkerOptions()
-                                .position(currentLatLng)
-                                .title("Current Location"));
                     } else {
                         Log.d("MapFragment", "Current location is null. Using defaults.");
                         mMap.moveCamera(CameraUpdateFactory
