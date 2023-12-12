@@ -34,6 +34,9 @@ public class FriendListFragment extends Fragment {
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE | Context.MODE_MULTI_PROCESS);
 
         userID = sharedPreferences.getString("userID", "user not logged in");
+        String username = "";
+
+
 
         Log.d("User ID is:", userID);
 
@@ -76,13 +79,41 @@ public class FriendListFragment extends Fragment {
         dataTest.retrieveFriendsArray(userID, new com.cs407.memorylane.dataTest.OnFriendsListRetrievedListener() {
             @Override
             public void onFriendsListRetrieved(ArrayList<String> friendsList) {
+                ArrayList<String> usernamesList = new ArrayList<>();
+
+
                 // Handle retrieved friends list
                 for (String friend : friendsList) {
                     Log.d("Friend", friend);
+
+                    dataTest.userIDToUsername(friend, new dataTest.OnUsernameRetrievedListener() {
+
+                        @Override
+                        public void onUsernameRetrieved(String username) {
+                            usernamesList.add(username);
+                            Log.d("Username of Friend:", username);
+                        }
+
+                        @Override
+                        public void onUsernameRetrievalFailure(String errorMessage) {
+                            Log.d("Username retrieval failed: ", errorMessage);
+                            String username = "Manoj2";
+                            //adapter.addData(userID, username);
+                            //Log.d("Username retrieval sent: ", username);
+
+
+                        }
+                    });
+
+
                 }
 
                 friendAdapter.clear();
-                friendAdapter.addAll(friendsList);
+
+                //go through friends_list and change each userID to username
+
+
+                friendAdapter.addAll(usernamesList);
 
                 // Notify the adapter that the data has changed
                 friendAdapter.notifyDataSetChanged();

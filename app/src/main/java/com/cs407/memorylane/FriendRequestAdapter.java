@@ -63,23 +63,6 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
 
         // Usage of userIDToUsername method
         dataTest dataTest = new dataTest();
-        dataTest.userIDToUsername(friendRequest, new dataTest.OnUsernameRetrievedListener() {
-            @Override
-            public void onUsernameRetrieved(String username) {
-                // Handle retrieved username
-                Log.d("Retrieved Username from adapter: " , username);
-
-                // Assuming the friend request string contains the username
-                holder.usernameTextView.setText(username);
-
-            }
-
-            @Override
-            public void onUsernameRetrievalFailure(String errorMessage) {
-                // Handle retrieval failure
-                System.out.println("Username retrieval failed: " + errorMessage);
-            }
-        });
 
 
         // Assuming the friend request string contains the username

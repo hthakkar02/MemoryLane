@@ -126,8 +126,8 @@ public class FriendRequestFragment extends Fragment {
                         @Override
                         public void onUsernameRetrievalFailure(String errorMessage) {
                             Log.d("Username retrieval failed: ", errorMessage);
-                            //String username = "Manoj";
-                            //adapter.addData(userID, username);
+                            String username = "Manoj2";
+                            adapter.addData(userID, username);
                             //Log.d("Username retrieval sent: ", username);
 
 
