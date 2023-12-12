@@ -58,6 +58,7 @@ public class SearchFragment extends Fragment {
         dataTest dT = dataTest.getInstance();
         // Implement sending friend request logic
         dT.sendFriendRequest(getContext(), username);
+        adapter.setFriendRequestSent(username);
     }
 
     private void performSearch(String query) {
@@ -71,4 +72,5 @@ public class SearchFragment extends Fragment {
             }
         });
     }
+
 }

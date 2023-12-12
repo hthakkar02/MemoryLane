@@ -9,12 +9,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
     private List<String> userList;
-    // Add a listener interface for button clicks (if needed)
+    private Map<String, Boolean> friendRequestSent = new HashMap<>();
     public interface OnFriendRequestClickListener {
         void onFriendRequestClick(String username);
     }
@@ -33,13 +35,23 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         return new ViewHolder(view);
     }
 
+    public void setFriendRequestSent(String username) {
+        friendRequestSent.put(username, true);
+        notifyDataSetChanged(); // Refresh the entire list
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         String username = userList.get(position);
         holder.textView.setText(username);
+
+        boolean isRequestSent = friendRequestSent.getOrDefault(username, false);
+        holder.button.setVisibility(isRequestSent ? View.GONE : View.VISIBLE);
         holder.button.setOnClickListener(v -> {
-            if (listener != null) {
+            if (listener != null && !isRequestSent) {
                 listener.onFriendRequestClick(username);
+                friendRequestSent.put(username, true);
+                notifyItemChanged(position);
             }
         });
     }
