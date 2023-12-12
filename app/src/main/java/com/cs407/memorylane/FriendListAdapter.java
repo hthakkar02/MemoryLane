@@ -40,13 +40,13 @@ public class FriendListAdapter extends ArrayAdapter<String> {
         return convertView;
     }
 
-    private void deleteFriend(String friendUserID) {
+    protected void deleteFriend(String friendUsername) {
+
 
         //String friendUserID = convertUsernameToUserID(friendUsername);
-
-        dataTest.getInstance().deleteFriend(userID, friendUserID);
+        dataTest.getInstance().deleteFriend(userID, friendUsername);
         // Optionally, remove the friend from the adapter and refresh the list
-        remove(friendUserID);
+        remove(friendUsername);
         notifyDataSetChanged();
     }
 

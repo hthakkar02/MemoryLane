@@ -100,7 +100,7 @@ public class FriendListFragment extends Fragment {
                             // If all usernames are retrieved, update the adapter
                             if (count == friendsList.size()) {
                                 friendAdapter.clear();
-                                friendAdapter.addAll(friendsList);
+                                friendAdapter.addAll(usernamesList);
                                 friendAdapter.notifyDataSetChanged();
                             }
                         }
