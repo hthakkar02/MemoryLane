@@ -33,6 +33,8 @@ public class ImageSlideshowActivity extends AppCompatActivity implements Slidesh
         dataTest dT = dataTest.getInstance();
         // Load images and set up ViewPager
         String groupKey = getIntent().getStringExtra("GROUP_KEY");
+        double lat = Double.parseDouble(getIntent().getStringExtra("LATITUDE"));
+        double lon = Double.parseDouble(getIntent().getStringExtra("LONGITUDE"));
         ArrayList<String> imagePathsForGroup = getIntent().getStringArrayListExtra("IMAGE_PATHS");
 
         // Use the image paths directly
@@ -60,7 +62,7 @@ public class ImageSlideshowActivity extends AppCompatActivity implements Slidesh
         menuButton.setOnClickListener(view -> {
             menuButton.setVisibility(View.INVISIBLE);
             getSupportFragmentManager().beginTransaction()
-                    .add(android.R.id.content, new SlideshowInfoFragment())
+                    .add(android.R.id.content, new SlideshowInfoFragment(lat, lon))
                     .commit();
         });
     }

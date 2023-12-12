@@ -224,6 +224,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
             intent.putExtra("GROUP_KEY", groupKey);
             intent.putStringArrayListExtra("IMAGE_PATHS", imagePathsForGroup);
+
+            LatLng position = marker.getPosition();
+            intent.putExtra("LATITUDE", position.latitude);
+            intent.putExtra("LONGITUDE", position.longitude);
+
             startActivity(intent);
             return true;
         });

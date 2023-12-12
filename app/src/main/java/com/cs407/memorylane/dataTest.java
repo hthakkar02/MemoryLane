@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -45,6 +47,7 @@ import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -591,6 +594,64 @@ public class dataTest extends AppCompatActivity {
                     // Handle failure
                     Log.e("Firestore", "Error adding document", e);
                 });
+    }
+    public String getStreetFromCoordinates(Context context, double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        String streetName = "";
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+            if (addresses != null && addresses.size() > 0) {
+                Address address = addresses.get(0);
+
+                streetName = addressThoroughfare(address);
+            } else {
+                streetName = "No street found";
+            }
+        } catch (IOException e) {
+            Log.e("StreetConverter", "Error getting street from coordinates", e);
+        }
+
+        return streetName;
+    }
+
+    private String addressThoroughfare(Address address) {
+        if (address != null && address.getThoroughfare() != null) {
+            return address.getThoroughfare();
+        } else {
+            return "Thoroughfare not available";
+        }
+    }
+
+    public String getNeighborhoodFromCoordinates(Context context, double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        String neighborhoodName = "";
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+            if (addresses != null && addresses.size() > 0) {
+                Address address = addresses.get(0);
+
+                // Extract the neighborhood name
+                neighborhoodName = addressLocality(address);
+            } else {
+                neighborhoodName = "No neighborhood found";
+            }
+        } catch (IOException e) {
+            Log.e("NeighborhoodConverter", "Error getting neighborhood from coordinates", e);
+        }
+
+        return neighborhoodName;
+    }
+
+    private String addressLocality(Address address) {
+        if (address != null && address.getLocality() != null) {
+            return address.getLocality();
+        } else {
+            return "Locality not available";
+        }
     }
 
 }

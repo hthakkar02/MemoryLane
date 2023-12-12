@@ -5,13 +5,27 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
+
+import com.google.type.LatLng;
 
 public class SlideshowInfoFragment extends Fragment {
+
+    double lat;
+    double lon;
+
+    TextView address;
+
+    public SlideshowInfoFragment(double lat, double lon){
+        this.lat = lat;
+        this.lon = lon;
+    }
 
     public interface OnFragmentInteractionListener {
         void onFragmentClosed();
@@ -57,6 +71,15 @@ public class SlideshowInfoFragment extends Fragment {
             }
         });
 
+        address = view.findViewById(R.id.address);
+        address.setText(getStreetAdress(getActivity(), lat, lon));
+
         return view;
+    }
+
+    private String getStreetAdress(Context context, double lat, double lon) {
+        dataTest dT = dataTest.getInstance();
+        Log.d("NEIGHBORHOOD", dT.getNeighborhoodFromCoordinates(context, lat, lon));
+        return dT.getNeighborhoodFromCoordinates(context, lat, lon);
     }
 }
