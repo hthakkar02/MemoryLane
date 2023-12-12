@@ -7,11 +7,16 @@ import android.widget.Button;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.firestore.auth.User;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdapter.ViewHolder> {
 
-    private List<String> friendRequests;
+    private List<String> friendRequestUserIDs;
+    private List<String> usernames;
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
@@ -19,8 +24,9 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
         void onDeclineClick(int position);
     }
 
-    public FriendRequestAdapter(List<String> friendRequests, OnItemClickListener listener) {
-        this.friendRequests = friendRequests;
+    public FriendRequestAdapter(List<String> friendRequestUserIDs, OnItemClickListener listener) {
+        this.friendRequestUserIDs = friendRequestUserIDs;
+        this.usernames = new ArrayList<>();
         this.listener = listener;
     }
 
@@ -44,12 +50,19 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
         return new ViewHolder(view);
     }
 
+    public void addData(String userID, String username) {
+        friendRequestUserIDs.add(userID);
+        usernames.add(username);
+        notifyDataSetChanged();
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String friendRequest = friendRequests.get(position);
+        String username = usernames.get(position);
+
 
         // Assuming the friend request string contains the username
-        holder.usernameTextView.setText(friendRequest);
+        holder.usernameTextView.setText(username);
 
         holder.acceptButton.setOnClickListener(v -> {
             if (listener != null) {
@@ -64,22 +77,30 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
         });
     }
 
+    public void clearData() {
+        friendRequestUserIDs.clear();
+        notifyDataSetChanged();
+    }
+
+
     @Override
     public int getItemCount() {
-        return friendRequests.size();
+        return friendRequestUserIDs.size();
     }
 
     // Helper method to update the data in the adapter
-    public void updateData(List<String> newData) {
-        friendRequests.clear();
-        friendRequests.addAll(newData);
+    public void updateData(String newUser) {
+        usernames.add(newUser);
         notifyDataSetChanged();
     }
 
     public String getItem(int position) {
-        if (position >= 0 && position < friendRequests.size()) {
-            return friendRequests.get(position);
+        if (position >= 0 && position < friendRequestUserIDs.size()) {
+            return friendRequestUserIDs.get(position);
         }
         return null;
     }
 }
+
+//neighbor, seq number, topology, forwarding table, socket
+//linkstate message is the problem where the flooding happens, the IP is wrong

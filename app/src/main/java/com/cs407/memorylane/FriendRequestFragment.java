@@ -14,7 +14,10 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.auth.User;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class FriendRequestFragment extends Fragment {
 
@@ -22,6 +25,7 @@ public class FriendRequestFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private FriendRequestAdapter adapter;
+    private List<String> usernames = new ArrayList<>();
 
     public FriendRequestFragment() {
     }
@@ -69,11 +73,11 @@ public class FriendRequestFragment extends Fragment {
                 dataTest dataTest = new dataTest();
                 String friendRequesterUserID = adapter.getItem(position);
                 Log.d("Friend Accept: ", friendRequesterUserID);
+
                 dataTest.onFriendRequestAccepted(userID, friendRequesterUserID);
-
-                //friendRequesterUserID.replace(adapter.getItem(position),"");
-
             }
+             //friendRequesterUserID.replace(adapter.getItem(position),"");
+
 
             @Override
             public void onDeclineClick(int position) {
@@ -92,7 +96,7 @@ public class FriendRequestFragment extends Fragment {
         recyclerView.setAdapter(adapter);
 
         // Fetch friend requests for the user
-        fetchFriendRequestsForUser(userID);
+        //fetchFriendRequestsForUser(userID);
 
         return view;
     }
@@ -103,15 +107,33 @@ public class FriendRequestFragment extends Fragment {
 
         com.cs407.memorylane.dataTest.OnFriendRequestsRetrievedListener listener = new com.cs407.memorylane.dataTest.OnFriendRequestsRetrievedListener() {
             @Override
-            public void onFriendRequestsRetrieved(ArrayList<String> friendRequests) {
+            public void onFriendRequestsRetrieved(ArrayList<String> friendRequestUserIDs) {
                 // Handle the retrieved friend requests here
-                for (String request : friendRequests) {
+                adapter.clearData();
+                //usernames.clear();
+
+                for (String userID : friendRequestUserIDs) {
                     // Process each friend request as needed
-                    Log.d("Friend Request: ", request);
+                    Log.d("Friend Request: ", userID);
+                    dataTest.userIDToUsername(userID, new dataTest.OnUsernameRetrievedListener() {
+
+                        @Override
+                        public void onUsernameRetrieved(String username) {
+                            adapter.addData(userID, username);
+                            //adapter.updateData(userID);
+                        }
+
+                        @Override
+                        public void onUsernameRetrievalFailure(String errorMessage) {
+                            Log.d("Username retrieval failed: ", errorMessage);
+                            //String username = "Manoj";
+                            //adapter.addData(userID, username);
+                            //Log.d("Username retrieval sent: ", username);
+
+
+                        }
+                    });
                 }
-
-                adapter.updateData(friendRequests);
-
             }
 
             @Override
