@@ -65,7 +65,8 @@ public class ImageSlideshowActivity extends AppCompatActivity implements Slidesh
             @Override
             public void onPageSelected(int position) {
                 updateImageCounter(position);
-                handleInfoFragmentUpdate(position); // Handle the fragment update or creation
+                if (menuButton.getVisibility() == View.INVISIBLE)
+                    handleInfoFragmentUpdate(position); // Handle the fragment update or creation
             }
 
             @Override

@@ -686,20 +686,26 @@ public class dataTest extends AppCompatActivity {
     }
 
     private String formatFullAddress(Address address) {
+        String addressname = "";
         if (address != null) {
             String streetNumber = address.getFeatureName(); // Often the street number
             String streetName = address.getThoroughfare(); // Street name
 
+            if (streetNumber != null) {
+                addressname+=streetNumber;
+            }
             if (streetNumber != null && streetName != null) {
-                return streetNumber + " " + streetName;
-            } else if (streetName != null) {
-                return streetName; // Only street name available
-            } else {
+                addressname+= " ";
+            }
+            if (streetName != null) {
+                addressname+=streetName;
+            }
+            if (addressname.equals("")) {
                 return "Address not available";
             }
-        } else {
-            return "Address not available";
+            return addressname;
         }
+        return "Address not available";
     }
 
 
