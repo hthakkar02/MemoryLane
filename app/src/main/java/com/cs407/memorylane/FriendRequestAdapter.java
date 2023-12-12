@@ -56,6 +56,12 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
         usernames.add(username);
         notifyDataSetChanged();
     }
+    public void removeItem(int position) {
+        if (position >= 0 && position < friendRequestUserIDs.size() ) {
+            friendRequestUserIDs.remove(position);
+            usernames.remove(position);
+        }
+    }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {

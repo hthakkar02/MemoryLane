@@ -68,6 +68,7 @@ public class FriendRequestFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         adapter = new FriendRequestAdapter(new ArrayList<>(), new FriendRequestAdapter.OnItemClickListener() {
+
             @Override
             public void onAcceptClick(int position) {
                 dataTest dT = dataTest.getInstance();
@@ -75,6 +76,9 @@ public class FriendRequestFragment extends Fragment {
                 Log.d("Friend Accept: ", friendRequesterUserID);
 
                 dT.onFriendRequestAccepted(userID, friendRequesterUserID);
+                adapter.removeItem(position);
+                adapter.notifyItemRemoved(position);
+
             }
              //friendRequesterUserID.replace(adapter.getItem(position),"");
 
@@ -86,6 +90,8 @@ public class FriendRequestFragment extends Fragment {
                 Log.d("Friend Decline1: ", userID);
                 Log.d("Friend Decline2: ", friendRequesterUserID);
                 dT.rejectFriendRequest(userID, friendRequesterUserID);
+                adapter.removeItem(position);
+                adapter.notifyItemRemoved(position);
 
                 //friendRequesterUserID.replace(adapter.getItem(position),"");
 
