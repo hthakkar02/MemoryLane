@@ -70,22 +70,22 @@ public class FriendRequestFragment extends Fragment {
         adapter = new FriendRequestAdapter(new ArrayList<>(), new FriendRequestAdapter.OnItemClickListener() {
             @Override
             public void onAcceptClick(int position) {
-                dataTest dataTest = new dataTest();
+                dataTest dT = dataTest.getInstance();
                 String friendRequesterUserID = adapter.getItem(position);
                 Log.d("Friend Accept: ", friendRequesterUserID);
 
-                dataTest.onFriendRequestAccepted(userID, friendRequesterUserID);
+                dT.onFriendRequestAccepted(userID, friendRequesterUserID);
             }
              //friendRequesterUserID.replace(adapter.getItem(position),"");
 
 
             @Override
             public void onDeclineClick(int position) {
-                dataTest dataTest = new dataTest();
+                dataTest dT = dataTest.getInstance();
                 String friendRequesterUserID = adapter.getItem(position);
                 Log.d("Friend Decline1: ", userID);
                 Log.d("Friend Decline2: ", friendRequesterUserID);
-                dataTest.rejectFriendRequest(userID, friendRequesterUserID);
+                dT.rejectFriendRequest(userID, friendRequesterUserID);
 
                 //friendRequesterUserID.replace(adapter.getItem(position),"");
 
@@ -103,7 +103,7 @@ public class FriendRequestFragment extends Fragment {
 
 
     public void fetchFriendRequestsForUser(String userID) {
-        dataTest dataTest = new dataTest();
+        dataTest dT = dataTest.getInstance();
 
         com.cs407.memorylane.dataTest.OnFriendRequestsRetrievedListener listener = new com.cs407.memorylane.dataTest.OnFriendRequestsRetrievedListener() {
             @Override
@@ -115,7 +115,7 @@ public class FriendRequestFragment extends Fragment {
                 for (String userID : friendRequestUserIDs) {
                     // Process each friend request as needed
                     Log.d("Friend Request: ", userID);
-                    dataTest.userIDToUsername(userID, new dataTest.OnUsernameRetrievedListener() {
+                    dT.userIDToUsername(userID, new dataTest.OnUsernameRetrievedListener() {
 
                         @Override
                         public void onUsernameRetrieved(String username) {
@@ -144,7 +144,7 @@ public class FriendRequestFragment extends Fragment {
         };
 
         // Use the method to retrieve friend requests for the given userID
-        dataTest.retrieveFriendRequestsArray(userID, listener);
+        dT.retrieveFriendRequestsArray(userID, listener);
     }
 
     protected void handleFriendRequestAcceptance(){
@@ -153,8 +153,8 @@ public class FriendRequestFragment extends Fragment {
         String userID = "UXnCetghE7VaSs1ZLzmI";
         String friendsUserID = "ADsMGJPvOJdyzLQJdz0X";
 
-        dataTest dataTest = new dataTest();
-        dataTest.onFriendRequestAccepted(userID, friendsUserID);
+        dataTest dT = dataTest.getInstance();
+        dT.onFriendRequestAccepted(userID, friendsUserID);
 
     }
 }

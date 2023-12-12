@@ -75,9 +75,9 @@ public class FriendListFragment extends Fragment {
 
 
     protected void retrieveFriends() {
-        dataTest dataTest = new dataTest();
+        dataTest dT = dataTest.getInstance();
 
-        dataTest.retrieveFriendsArray(userID, new com.cs407.memorylane.dataTest.OnFriendsListRetrievedListener() {
+        dT.retrieveFriendsArray(userID, new dataTest.OnFriendsListRetrievedListener(){
             @Override
             public void onFriendsListRetrieved(ArrayList<String> friendsList) {
                 ArrayList<String> usernamesList = new ArrayList<>();
@@ -89,7 +89,7 @@ public class FriendListFragment extends Fragment {
                 for (String friend : friendsList) {
                     Log.d("Friend", friend);
 
-                    dataTest.userIDToUsername(friend, new dataTest.OnUsernameRetrievedListener() {
+                    dT.userIDToUsername(friend, new dataTest.OnUsernameRetrievedListener() {
                         @Override
                         public void onUsernameRetrieved(String username) {
                             usernamesList.add(username);
