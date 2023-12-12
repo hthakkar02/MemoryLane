@@ -189,6 +189,8 @@ public class authTests extends AppCompatActivity {
         newUser.put("Username", username);
         List<String> friendsList = new ArrayList<>();
         newUser.put("Friends", friendsList);
+        List<String> friendsRequestList = new ArrayList<>();
+        newUser.put("Friend Request", friendsRequestList);
 
         // Add the new document to the "User Data" collection
         collectionReference.add(newUser)
