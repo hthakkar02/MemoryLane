@@ -21,10 +21,9 @@ public class FriendListFragment extends Fragment {
 
     private String userID = "";
     private ListView friendListView;
-    private ArrayAdapter<String> friendAdapter;
+    private FriendListAdapter friendAdapter;
 
     public FriendListFragment() {
-        // Required empty public constructor
     }
 
     @Override
@@ -42,7 +41,7 @@ public class FriendListFragment extends Fragment {
         Log.d("User ID is:", userID);
 
         friendListView = view.findViewById(R.id.friend_list);
-        friendAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1);
+        friendAdapter = new FriendListAdapter(getContext(), new ArrayList<>());
         friendListView.setAdapter(friendAdapter);
 
 
