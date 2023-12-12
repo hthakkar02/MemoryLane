@@ -55,13 +55,13 @@ public class SearchFragment extends Fragment {
     }
 
     private void sendFriendRequest(String username) {
-        dataTest dT = new dataTest();
+        dataTest dT = dataTest.getInstance();
         // Implement sending friend request logic
         dT.sendFriendRequest(getContext(), username);
     }
 
     private void performSearch(String query) {
-        dataTest dT = new dataTest();
+        dataTest dT = dataTest.getInstance();
         dT.searchUsername(query, new dataTest.UsernameSearchCallback() {
             @Override
             public void onSearchCompleted(List<String> usernames) {

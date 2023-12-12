@@ -39,6 +39,44 @@
         android:padding="10dp"
         android:src="@drawable/ic_profile" />
 
+    <RadioGroup
+        android:id="@+id/modeSelector"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="16dp"
+        android:background="@drawable/pill_shape_background"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/globalMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@drawable/ic_global_selector"
+            android:button="@android:color/transparent"
+            android:padding="10dp" />
+
+        <RadioButton
+            android:id="@+id/friendsMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@drawable/ic_friends_selector"
+            android:button="@android:color/transparent"
+            android:padding="10dp" />
+
+        <RadioButton
+            android:id="@+id/privateMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@drawable/ic_private_selector"
+            android:button="@android:color/transparent"
+            android:padding="10dp" />
+    </RadioGroup>
+
     <FrameLayout
         android:id="@+id/appGuideOverlay"
         android:layout_width="match_parent"
