@@ -113,13 +113,13 @@
                 <View
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:background="@drawable/red_marker" />
+                    android:background="@drawable/ic_global" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="Global - Images viewable by everybody."
+                    android:text="Global - Displays all images shared globally."
                     android:textColor="#FFFFFF" />
             </LinearLayout>
 
@@ -132,13 +132,13 @@
                 <View
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:background="@drawable/blue_marker" />
+                    android:background="@drawable/ic_friends_selected" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="Friends - Images viewable by friends only."
+                    android:text="Friends - Displays all images shared by your friends."
                     android:textColor="#FFFFFF" />
             </LinearLayout>
 
@@ -151,13 +151,13 @@
                 <View
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:background="@drawable/green_marker" />
+                    android:background="@drawable/ic_private_selected" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="Private - Images viewable by you only."
+                    android:text="Private - Displays all images you uploaded"
                     android:textColor="#FFFFFF" />
             </LinearLayout>
 
